@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>دراسة جدوى دمج — سواج التجارية والأروش التجارية</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --ink:#14213D;
+  --ink-2:#1E2F52;
+  --brass:#B08D43;
+  --brass-soft:#C9A24B;
+  --surface:#F6F4EF;
+  --card:#FFFFFF;
+  --line:#E4DFD4;
+  --muted:#5B6472;
+  --pos:#1F7A5A;
+  --pos-soft:#E3F1EB;
+  --neg:#B23A48;
+  --neg-soft:#F6E5E7;
+  --warn:#C8861A;
+  --shadow:0 1px 2px rgba(20,33,61,.06),0 8px 28px rgba(20,33,61,.08);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:"IBM Plex Sans Arabic",system-ui,"Segoe UI","Tahoma",sans-serif;
+  background:var(--surface);color:var(--ink);
+  font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{font-family:"Reem Kufi","IBM Plex Sans Arabic",sans-serif;font-weight:600;margin:0;line-height:1.35}
+.num{font-feature-settings:"tnum";font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:plaintext;display:inline-block}
+
+/* ---- Top bar ---- */
+.topbar{
+  background:var(--ink);color:#fff;position:sticky;top:0;z-index:40;
+  border-bottom:3px solid var(--brass);
+}
+.topbar-inner{max-width:1240px;margin:0 auto;padding:14px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:13px}
+.crest{width:42px;height:42px;border:1.5px solid var(--brass);border-radius:9px;display:grid;place-items:center;color:var(--brass-soft);font-family:"Reem Kufi";font-weight:700;font-size:20px;flex-shrink:0}
+.brand h1{font-size:18px;color:#fff;letter-spacing:.2px}
+.brand .sub{font-size:11.5px;color:#A9B4C9;font-family:"IBM Plex Sans Arabic";font-weight:400}
+.topbar-actions{margin-inline-start:auto;display:flex;gap:8px;flex-wrap:wrap}
+.btn{
+  font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;
+  border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#fff;
+  padding:8px 14px;border-radius:8px;transition:.15s;display:inline-flex;align-items:center;gap:6px;
+}
+.btn:hover{background:rgba(255,255,255,.14)}
+.btn-brass{background:var(--brass);border-color:var(--brass);color:#15233f;font-weight:600}
+.btn-brass:hover{background:var(--brass-soft)}
+
+/* ---- Tabs ---- */
+.tabs{background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:71px;z-index:35}
+.tabs-inner{max-width:1240px;margin:0 auto;display:flex;gap:4px;padding:0 14px;overflow-x:auto;scrollbar-width:thin}
+.tab{
+  font-family:"Reem Kufi";font-size:14px;font-weight:500;color:var(--muted);
+  background:none;border:none;border-bottom:2.5px solid transparent;cursor:pointer;
+  padding:15px 16px;white-space:nowrap;display:flex;align-items:center;gap:8px;transition:.15s;
+}
+.tab .ti{width:22px;height:22px;flex-shrink:0;opacity:.85}
+.tab:hover{color:var(--ink)}
+.tab.active{color:var(--ink);border-bottom-color:var(--brass)}
+.tab.active .ti{opacity:1}
+
+/* ---- Layout ---- */
+main{max-width:1240px;margin:0 auto;padding:26px 22px 80px}
+.section{display:none;animation:fade .4s ease}
+.section.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.section,*{animation:none!important;transition:none!important}}
+
+.sec-head{margin-bottom:22px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.eyebrow{font-size:12px;letter-spacing:2px;color:var(--brass);font-weight:600;text-transform:uppercase;font-family:"IBM Plex Sans Arabic"}
+.sec-head h2{font-size:26px;margin-top:6px}
+.sec-head p{color:var(--muted);margin:8px 0 0;max-width:760px;font-size:14.5px}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:var(--shadow);margin-bottom:20px}
+.card-title{font-size:17px;display:flex;align-items:center;gap:9px;margin-bottom:4px}
+.card-title .dot{width:9px;height:9px;border-radius:50%;background:var(--brass)}
+.card-sub{color:var(--muted);font-size:13px;margin:0 0 18px}
+.grid{display:grid;gap:18px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:920px){.g2,.g3,.g4{grid-template-columns:1fr}.tabs{top:auto}}
+
+/* ---- KPI tiles ---- */
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:18px;box-shadow:var(--shadow)}
+.kpi .label{font-size:12.5px;color:var(--muted);font-weight:500}
+.kpi .value{font-size:27px;font-weight:700;font-family:"Reem Kufi";margin-top:7px;color:var(--ink)}
+.kpi .value small{font-size:14px;color:var(--muted);font-weight:400;font-family:"IBM Plex Sans Arabic"}
+.kpi .delta{font-size:12.5px;margin-top:6px;font-weight:600;display:inline-flex;align-items:center;gap:4px}
+.kpi .delta.up{color:var(--pos)}
+.kpi .delta.down{color:var(--neg)}
+.kpi.accent{background:linear-gradient(160deg,var(--ink),var(--ink-2));border-color:var(--ink)}
+.kpi.accent .label{color:#A9B4C9}
+.kpi.accent .value{color:#fff}
+
+/* ---- Tables ---- */
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{padding:9px 11px;text-align:right;border-bottom:1px solid var(--line)}
+thead th{background:#FAF8F3;font-weight:600;color:var(--ink);font-size:12.5px;border-bottom:1.5px solid var(--brass)}
+tbody tr:hover{background:#FBFAF6}
+td.n,th.n{text-align:left;direction:ltr;font-feature-settings:"tnum";font-variant-numeric:tabular-nums}
+tr.total td{font-weight:700;background:#F4F1E9;border-top:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink)}
+tr.sub td{font-weight:600;background:#FAF8F3}
+.fin-in{
+  width:128px;font-family:inherit;font-size:13px;text-align:left;direction:ltr;
+  border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:#fff;color:var(--ink);
+  font-feature-settings:"tnum";
+}
+.fin-in:focus{outline:2px solid var(--brass-soft);outline-offset:0;border-color:var(--brass)}
+.elim{color:var(--neg)}
+
+/* ---- Pills / badges ---- */
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px}
+.pill.pos{background:var(--pos-soft);color:var(--pos)}
+.pill.neg{background:var(--neg-soft);color:var(--neg)}
+.pill.warn{background:#FBF1DD;color:var(--warn)}
+.pill.info{background:#E8EDF6;color:var(--ink)}
+
+/* ---- SWOT ---- */
+.swot{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.swot .q{border-radius:12px;padding:16px;border:1px solid var(--line)}
+.swot .q h4{font-size:15px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.swot .q ul{margin:0;padding-inline-start:18px;font-size:13.5px;color:#3a4256}
+.swot .q li{margin-bottom:6px}
+.swot .s{background:var(--pos-soft)} .swot .s h4{color:var(--pos)}
+.swot .w{background:var(--neg-soft)} .swot .w h4{color:var(--neg)}
+.swot .o{background:#E8EDF6} .swot .o h4{color:var(--ink)}
+.swot .t{background:#FBF1DD} .swot .t h4{color:var(--warn)}
+@media(max-width:920px){.swot{grid-template-columns:1fr}}
+
+/* ---- Lists ---- */
+.flist{list-style:none;margin:0;padding:0}
+.flist li{padding:11px 0;border-bottom:1px solid var(--line);display:flex;gap:11px;align-items:flex-start}
+.flist li:last-child{border-bottom:none}
+.flist .ic{flex-shrink:0;width:24px;height:24px;border-radius:7px;background:#F4F1E9;display:grid;place-items:center;color:var(--brass);font-weight:700;font-size:13px}
+.flist b{display:block;font-size:14px}
+.flist span{color:var(--muted);font-size:13px}
+
+/* ---- Score slider ---- */
+.scorebox{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:#FAF8F3;border:1px solid var(--line);border-radius:11px;padding:14px 18px;margin-top:8px}
+.scorebox label{font-weight:600;font-size:14px;flex-shrink:0}
+.scorebox input[type=range]{flex:1;min-width:160px;accent-color:var(--brass)}
+.scorebox .sval{font-family:"Reem Kufi";font-weight:700;font-size:20px;color:var(--ink);min-width:54px;text-align:center}
+
+/* ---- Timeline / phases ---- */
+.phase{display:flex;gap:14px;padding:14px 0;border-bottom:1px dashed var(--line)}
+.phase:last-child{border-bottom:none}
+.phase .stage{flex-shrink:0;width:62px;font-family:"Reem Kufi";font-weight:700;color:var(--brass);font-size:13px}
+.phase b{font-size:14.5px}
+.phase p{margin:4px 0 0;color:var(--muted);font-size:13px}
+
+/* ---- Note / callout ---- */
+.note{background:#FBF8F0;border-inline-start:3px solid var(--brass);border-radius:0 10px 10px 0;padding:13px 16px;font-size:13.5px;color:#4a4330;margin:14px 0}
+.note b{color:var(--ink)}
+
+/* ---- Gauge ---- */
+.gauge-wrap{display:flex;flex-direction:column;align-items:center;text-align:center}
+.gauge-verdict{font-family:"Reem Kufi";font-weight:700;font-size:22px;margin-top:6px}
+.gauge-score{font-family:"Reem Kufi";font-weight:700;font-size:46px;line-height:1}
+.gauge-score small{font-size:18px;color:var(--muted);font-weight:500}
+
+textarea.edit{width:100%;font-family:inherit;font-size:13.5px;border:1px solid var(--line);border-radius:9px;padding:11px;resize:vertical;color:var(--ink);background:#fff;line-height:1.7}
+textarea.edit:focus{outline:2px solid var(--brass-soft);border-color:var(--brass)}
+
+.chart-box{position:relative;height:300px}
+.chart-box.sm{height:240px}
+
+/* ---- Footer print ---- */
+.report-head{display:none}
+
+@media print{
+  .topbar,.tabs,.topbar-actions,.scorebox input,.note.no-print{display:none!important}
+  .section{display:block!important;page-break-before:always}
+  .section:first-of-type{page-break-before:avoid}
+  .report-head{display:block;text-align:center;margin-bottom:18px;border-bottom:2px solid var(--ink);padding-bottom:12px}
+  body{background:#fff;font-size:12px}
+  .card{box-shadow:none;break-inside:avoid}
+  .kpi{box-shadow:none}
+  main{padding:0}
+}
+
+/* ---- Auth & Users ---- */
+.overlay{position:fixed;inset:0;background:linear-gradient(160deg,#101b33,#1E2F52);z-index:100;display:grid;place-items:center;padding:20px}
+.login-card{background:var(--card);border-radius:18px;box-shadow:0 30px 80px rgba(0,0,0,.4);width:100%;max-width:400px;padding:34px 30px;border-top:4px solid var(--brass)}
+.login-card .crest{width:54px;height:54px;font-size:24px;margin:0 auto 16px}
+.login-card h2{text-align:center;font-size:21px}
+.login-card .ls{text-align:center;color:var(--muted);font-size:13px;margin:6px 0 24px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+.field input,.field select{width:100%;font-family:inherit;font-size:14px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+.field input:focus,.field select:focus{outline:2px solid var(--brass-soft);border-color:var(--brass)}
+.btn-full{width:100%;justify-content:center;background:var(--ink);border-color:var(--ink);color:#fff;font-size:15px;font-weight:600;padding:12px}
+.btn-full:hover{background:var(--ink-2)}
+.login-err{display:none;background:var(--neg-soft);color:var(--neg);font-size:13px;padding:10px 13px;border-radius:9px;margin-bottom:14px;text-align:center;font-weight:600}
+.login-hint{margin-top:18px;font-size:12px;color:var(--muted);text-align:center;background:#FAF8F3;padding:10px;border-radius:9px}
+.user-chip{display:flex;align-items:center;gap:9px;color:#fff;font-size:13px;padding:6px 12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);border-radius:30px}
+.user-chip .av{width:28px;height:28px;border-radius:50%;background:var(--brass);color:#15233f;display:grid;place-items:center;font-weight:700;font-size:13px;flex-shrink:0}
+.user-chip b{font-weight:600}.user-chip span{color:#A9B4C9;font-size:11.5px}
+
+.modal{position:fixed;inset:0;background:rgba(16,27,51,.55);z-index:90;display:none;place-items:center;padding:20px}
+.modal-card{background:var(--card);border-radius:16px;width:100%;max-width:760px;max-height:88vh;overflow:auto;box-shadow:0 24px 70px rgba(0,0,0,.35)}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:2}
+.modal-head h3{font-size:18px}
+.modal-x{cursor:pointer;border:none;background:#F4F1E9;width:34px;height:34px;border-radius:9px;font-size:18px;color:var(--ink)}
+.modal-body{padding:24px}
+.role-tag{font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:20px;background:#E8EDF6;color:var(--ink)}
+.role-tag.admin{background:#F4E6C8;color:#8a6516}
+.add-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;background:#FAF8F3;border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:18px}
+.add-form .field{margin:0}
+.add-form .full{grid-column:1/-1}
+@media(max-width:600px){.add-form{grid-template-columns:1fr}}
+.tbtn{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:7px;padding:4px 10px;font-size:12px;font-family:inherit;color:var(--ink)}
+.tbtn.del{color:var(--neg);border-color:#eccdd1}
+input:disabled,select:disabled,textarea:disabled,input[type=range]:disabled{opacity:.55;cursor:not-allowed;background:#F4F2EC}
+
+/* ---- Interactive Scorecard ---- */
+.sc-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:16px;flex-wrap:wrap}
+.sc-score{font-size:14px;color:var(--muted)}
+.sc-score b{font-family:"Reem Kufi";font-size:24px;color:var(--ink)}
+.sc-num{width:78px;font-family:inherit;font-size:13px;text-align:left;direction:ltr;border:1px solid var(--line);border-radius:6px;padding:5px 7px;background:#fff;color:var(--ink);font-feature-settings:"tnum"}
+.scc{width:100%;min-width:150px;font-family:inherit;font-size:13px;border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:#fff;color:var(--ink)}
+.sc-num:focus,.scc:focus{outline:2px solid var(--brass-soft);border-color:var(--brass)}
+.btn.sc-add{background:#F4F1E9;color:var(--ink);border-color:var(--line)}
+.btn.sc-add:hover{background:#ece7da}
+.swot-item{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.swot-item .sw-in{flex:1;font-family:inherit;font-size:13px;border:1px solid rgba(0,0,0,.1);border-radius:7px;padding:6px 9px;background:rgba(255,255,255,.75);color:#3a4256}
+.swot-item .sw-in:focus{outline:2px solid var(--brass-soft);border-color:var(--brass)}
+.swot-add{margin-top:8px;padding:5px 11px;font-size:12px;background:rgba(255,255,255,.6)}
+.sw-del{padding:3px 9px;line-height:1}
+.g-in{width:100%;min-width:120px}
+.ilist .il-row{display:flex;gap:8px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line)}
+.ilist .il-row:last-child{border-bottom:none}
+.il-fields{flex:1;display:flex;flex-direction:column;gap:5px}
+.il-in{font-family:inherit;font-size:13px;border:1px solid var(--line);border-radius:6px;padding:6px 9px;background:#fff;color:var(--ink)}
+.il-b{font-weight:600}
+.il-s{color:var(--muted)}
+.hf-in{width:100%;min-width:110px}
+.acc-editor{padding:14px 4px}
+.acc-admin{display:flex;align-items:center;gap:9px;font-weight:600;font-size:13.5px;margin-bottom:14px}
+.acc-admin input{width:17px;height:17px;accent-color:var(--brass)}
+.acc-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.acc-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 12px}
+.acc-row span{font-size:13.5px;font-weight:500}
+.acc-row select{font-family:inherit;font-size:13px;border:1px solid var(--line);border-radius:7px;padding:5px 9px;background:#fff;color:var(--ink);min-width:104px}
+.acc-row select:focus{outline:2px solid var(--brass-soft);border-color:var(--brass)}
+@media(max-width:600px){.acc-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="report-head">
+  <h1 style="font-size:22px">دراسة جدوى دمج شركتي سواج التجارية والأروش التجارية</h1>
+  <div style="color:var(--muted);font-size:12px;margin-top:6px">تقرير سرّي مُعدّ للإدارة العليا — للاستخدام الداخلي فقط</div>
+</div>
+
+<!-- شاشة تسجيل الدخول -->
+<div class="overlay" id="loginOverlay">
+  <div class="login-card">
+    <div class="crest">س‏أ</div>
+    <h2>نظام دراسة الدمج</h2>
+    <div class="ls">سواج التجارية × الأروش التجارية</div>
+    <div class="login-err" id="loginErr">اسم المستخدم أو كلمة المرور غير صحيحة</div>
+    <div class="field"><label>اسم المستخدم</label><input id="loginUser" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="field"><label>كلمة المرور</label><input id="loginPass" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn btn-full" onclick="doLogin()">تسجيل الدخول</button>
+    <div class="login-hint" id="loginHint"></div>
+  </div>
+</div>
+
+<!-- نافذة إدارة المستخدمين -->
+<div class="modal" id="userModal">
+  <div class="modal-card">
+    <div class="modal-head"><h3>👥 إدارة المستخدمين والصلاحيات</h3><button class="modal-x" onclick="closeUsers()">✕</button></div>
+    <div class="modal-body">
+      <table id="usersTable"></table>
+      <div class="add-form">
+        <div class="field"><label>الاسم الظاهر</label><input id="nuName" placeholder="مثال: محمد العتيبي"></div>
+        <div class="field"><label>اسم المستخدم (للدخول)</label><input id="nuUser" placeholder="m.otaibi"></div>
+        <div class="field"><label>كلمة المرور</label><input id="nuPass" placeholder="••••••"></div>
+        <div class="field"><label>قالب الصلاحيات الأولي</label><select id="nuRole">
+          <option value="custom">مخصّص — أحدّد كل قسم يدويًا بعد الإضافة</option>
+          <option value="admin">مدير النظام — كل الصلاحيات + إدارة المستخدمين</option>
+          <option value="analyst">محلل — عرض وتعديل كل الأقسام</option>
+          <option value="viewer">مشاهد — عرض كل الأقسام (قراءة فقط)</option>
+          <option value="financial">المالية فقط — تعديل قسم المالية</option>
+          <option value="hr">الموارد فقط — تعديل قسم الموارد البشرية</option>
+        </select></div>
+        <div class="full"><button class="btn btn-brass" style="width:100%;justify-content:center" onclick="addUser()">＋ إضافة مستخدم</button></div>
+      </div>
+      <div class="note no-print" style="margin-top:16px"><b>ملاحظة أمنية:</b> هذا نظام محلي للتشغيل على المتصفح، وكلمات المرور تُخزَّن داخل الجهاز دون تشفير. للتشغيل الشبكي الآمن متعدد الفروع يلزم نسخة باستضافة وقاعدة بيانات.</div>
+    </div>
+  </div>
+</div>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="crest">س‏أ</div>
+      <div>
+        <h1>دراسة جدوى الدمج — سواج × الأروش</h1>
+        <div class="sub">منصّة تحليلية متكاملة لاتخاذ قرار الاندماج</div>
+      </div>
+    </div>
+    <div class="topbar-actions" id="topActions">
+      <div class="user-chip" id="userChip"></div>
+      <button class="btn" id="btnUsers" onclick="openUsers()" style="display:none">👥 المستخدمون</button>
+      <button class="btn" id="btnTemplate" onclick="downloadTemplate()">📥 قالب Excel</button>
+      <button class="btn" id="btnExcel" onclick="document.getElementById('xlsImp').click()" style="display:none">📊 استيراد Excel</button>
+      <input type="file" id="xlsImp" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event)">
+      <button class="btn" onclick="exportData()">⬇ حفظ نسخة</button>
+      <button class="btn" id="btnImport" onclick="document.getElementById('imp').click()" style="display:none">⬆ استيراد</button>
+      <input type="file" id="imp" accept=".json" style="display:none" onchange="importData(event)">
+      <button class="btn btn-brass" onclick="window.print()">🖨 تقرير PDF</button>
+      <button class="btn" onclick="logout()">↩ خروج</button>
+    </div>
+  </div>
+</div>
+
+<nav class="tabs">
+  <div class="tabs-inner" id="tabs"></div>
+</nav>
+
+<main id="main"></main>
+
+<script>
+/* ============================================================
+   نموذج البيانات — أرقام توضيحية افتراضية قابلة للتعديل بالكامل
+   ============================================================ */
+const fmt = (n)=> (isFinite(n)? Math.round(n).toLocaleString('en-US') : '—');
+const fmt1 = (n)=> (isFinite(n)? n.toLocaleString('en-US',{maximumFractionDigits:1}) : '—');
+const pct = (n)=> (isFinite(n)? n.toLocaleString('en-US',{maximumFractionDigits:1})+'%' : '—');
+
+// كل قيمة بالريال السعودي
+const D = {
+  // سواج = موزّع الجملة (مورّد) ، الأروش = التجزئة — كل القيم تبدأ صفرًا، يُدخلها المستخدم
+  swaj:{
+    name:'سواج التجارية', role:'الجملة والتوريد',
+    revenue:0, cogs:0,
+    op:{salaries:0, rent:0, marketing:0, admin:0, depreciation:0, other:0},
+    finance:0,
+    ca:{cash:0, receivables:0, inventory:0, prepaid:0, other:0},
+    fa:{property:0, fixtures:0, vehicles:0, intangibles:0, other:0},
+    cl:{payables:0, stloans:0, accruals:0, zakat:0, other:0},
+    ncl:{ltloans:0, eosb:0},
+    eq:{capital:0, reserves:0, retained:0}
+  },
+  laroche:{
+    name:'الأروش التجارية', role:'التجزئة',
+    revenue:0, cogs:0,
+    op:{salaries:0, rent:0, marketing:0, admin:0, depreciation:0, other:0},
+    finance:0,
+    ca:{cash:0, receivables:0, inventory:0, prepaid:0, other:0},
+    fa:{property:0, fixtures:0, vehicles:0, intangibles:0, other:0},
+    cl:{payables:0, stloans:0, accruals:0, zakat:0, other:0},
+    ncl:{ltloans:0, eosb:0},
+    eq:{capital:0, reserves:0, retained:0}
+  },
+  // المعاملات البينية (سواج تبيع للأروش)
+  inter:{ sales:0, margin:0, invRetained:0, balance:0 },
+  zakatRate:2.5,
+  // التآزر المتوقع بعد الدمج — يُدخله المستخدم بعد التحليل
+  syn:{ overhead:0, wcRelease:0, revenueSyn:0 },
+  // درجات الدراسات (0-100) — تبدأ بانتظار التقييم
+  scores:{ financial:0, market:0, strategic:0, legal:0, hr:0, integration:0 },
+  weights:{ financial:25, market:15, strategic:18, legal:14, hr:12, integration:16 }
+};
+
+/* ---- محرك الحساب المالي ---- */
+function opTotal(c){return Object.values(c.op).reduce((a,b)=>a+b,0)}
+function caTotal(c){return Object.values(c.ca).reduce((a,b)=>a+b,0)}
+function faTotal(c){return Object.values(c.fa).reduce((a,b)=>a+b,0)}
+function clTotal(c){return Object.values(c.cl).reduce((a,b)=>a+b,0)}
+function nclTotal(c){return Object.values(c.ncl).reduce((a,b)=>a+b,0)}
+function eqTotal(c){return Object.values(c.eq).reduce((a,b)=>a+b,0)}
+
+function incomeStatement(c){
+  const gross = c.revenue - c.cogs;
+  const opex = opTotal(c);
+  const ebit = gross - opex;
+  const pbt = ebit - c.finance;
+  const zakat = Math.max(0, pbt) * D.zakatRate/100;
+  const net = pbt - zakat;
+  return {revenue:c.revenue, cogs:c.cogs, gross, opex, ebit, finance:c.finance, pbt, zakat, net};
+}
+
+function unrealizedProfit(){ return D.inter.sales * (D.inter.margin/100) * (D.inter.invRetained/100); }
+
+function consolidated(){
+  const s=D.swaj,l=D.laroche;
+  const up = unrealizedProfit();
+  const revenue = s.revenue + l.revenue - D.inter.sales;
+  const cogs = s.cogs + l.cogs - D.inter.sales + up;
+  const gross = revenue - cogs;
+  const opex = opTotal(s)+opTotal(l);
+  const ebit = gross - opex;
+  const finance = s.finance + l.finance;
+  const pbt = ebit - finance;
+  const zakat = Math.max(0,pbt)*D.zakatRate/100;
+  const net = pbt - zakat;
+  // الميزانية
+  const inv = s.ca.inventory + l.ca.inventory - up;
+  const recv = s.ca.receivables + l.ca.receivables - D.inter.balance;
+  const cash = s.ca.cash + l.ca.cash;
+  const ca = caTotal(s)+caTotal(l) - D.inter.balance - up;
+  const fa = faTotal(s)+faTotal(l);
+  const assets = ca+fa;
+  const payables = s.cl.payables + l.cl.payables - D.inter.balance;
+  const cl = clTotal(s)+clTotal(l) - D.inter.balance;
+  const ncl = nclTotal(s)+nclTotal(l);
+  const liab = cl+ncl;
+  const eq = eqTotal(s)+eqTotal(l);
+  return {revenue,cogs,gross,opex,ebit,finance,pbt,zakat,net,
+          up, inv,recv,cash,ca,fa,assets,payables,cl,ncl,liab,eq};
+}
+
+function ratios(c, is, bs){
+  // bs: {ca,fa,assets,cl,ncl,liab,eq,inventory}
+  const cr = bs.ca/bs.cl;
+  const quick = (bs.ca-bs.inventory)/bs.cl;
+  const turn = is.cogs/bs.inventory;
+  const wc = bs.ca-bs.cl;
+  const gm = is.gross/is.revenue*100;
+  const nm = is.net/is.revenue*100;
+  const roa = is.net/bs.assets*100;
+  const roe = is.net/bs.eq*100;
+  const de = bs.liab/bs.eq;
+  const days = 360/turn;
+  return {cr,quick,turn,wc,gm,nm,roa,roe,de,days};
+}
+
+/* ============================================================
+   التبويبات
+   ============================================================ */
+const TABS = [
+  {id:'overview', label:'نظرة عامة', icon:icOverview},
+  {id:'financial', label:'المالية والمحاسبية', icon:icFin},
+  {id:'market', label:'السوق والعملاء', icon:icMarket},
+  {id:'strategic', label:'الاستراتيجية', icon:icStrat},
+  {id:'legal', label:'القانونية والاستشارية', icon:icLegal},
+  {id:'hr', label:'الموارد البشرية', icon:icHr},
+  {id:'integration', label:'التكامل والتآزر', icon:icSyn},
+  {id:'dashboard', label:'لوحة القرار', icon:icDash},
+];
+
+function icOverview(){return svg('M3 12l9-9 9 9M5 10v10h14V10')}
+function icFin(){return svg('M3 3v18h18M7 14l3-3 3 3 5-6')}
+function icMarket(){return svg('M21 21l-5-5M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z')}
+function icStrat(){return svg('M12 2v4m0 12v4m10-10h-4M6 12H2m15-5l-3 3m-6 6l-3 3m12 0l-3-3M7 7L4 4')}
+function icLegal(){return svg('M12 3v18M5 7h14M7 7l-3 7a4 4 0 0 0 6 0L7 7zm10 0l-3 7a4 4 0 0 0 6 0l-3-7z')}
+function icHr(){return svg('M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm14 10v-2a4 4 0 0 0-3-3.87M16 3.13A4 4 0 0 1 16 11')}
+function icSyn(){return svg('M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20')}
+function icDash(){return svg('M3 13h8V3H3v10zm10 8h8V3h-8v18zM3 21h8v-6H3v6z')}
+function svg(p){return `<svg class="ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="${p}"/></svg>`}
+
+let charts={};
+function buildTabs(){
+  document.getElementById('tabs').innerHTML = TABS.map((t,i)=>
+    `<button class="tab ${i===0?'active':''}" data-tab="${t.id}" onclick="switchTab('${t.id}')">${t.icon()} ${t.label}</button>`
+  ).join('');
+}
+function switchTab(id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===id));
+  document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active',s.id==='sec-'+id));
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='financial') renderFinCharts();
+  if(id==='dashboard') renderDash();
+  if(id==='market') renderMarketChart();
+}
+
+/* ============================================================
+   بناء الأقسام
+   ============================================================ */
+function buildSections(){
+  const m=document.getElementById('main');
+  m.innerHTML = secOverview()+secFinancial()+secMarket()+secStrategic()+secLegal()+secHr()+secIntegration()+secDashboard();
+  bindFinInputs();
+  bindScores();
+  computeAll();
+}
+
+/* ---------- 1. نظرة عامة ---------- */
+function secOverview(){
+  return `<section class="section active" id="sec-overview">
+    <div class="sec-head"><div class="eyebrow">ملف الصفقة</div>
+      <h2>دمج تكاملي رأسي بين الجملة والتجزئة</h2>
+      <p>تقترح هذه الدراسة دمج <b>سواج التجارية</b> (موزّع الجملة والمورّد) مع <b>الأروش التجارية</b> (التجزئة) في كيان واحد. أساس الفكرة <b>تقليل التكاليف وتعظيم الإيراد عبر تركيز موحّد للإدارة</b> — قيادة واحدة تتخذ قرارات الشراء والتسعير والتوزيع، فتُلغى ازدواجية الإدارة والمصروفات العمومية وتُوجَّه الموارد نحو النمو. ويتحقّق ذلك عبر <b>توحيد المخزون والمشتريات وتسريع دورة النقد بسلسلة إمداد واحدة من المورّد إلى المتجر</b>، إلى جانب <b>تحويل كفاءة رأس المال</b> بإلغاء هامش الوساطة الداخلي وتحرير النقد المحتجز في المخزون.</p>
+    </div>
+    <div class="grid g2">
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>سواج التجارية</div>
+        <p class="card-sub">الدور: الجملة والتوريد — المورّد الداخلي للأروش</p>
+        <ul class="flist">
+          <li><span class="ic">١</span><div><b>نموذج العمل</b><span>توريد بالجملة بهامش ربح ~20% — جزء كبير من مبيعاتها داخلي (للأروش)</span></div></li>
+          <li><span class="ic">٢</span><div><b>الميزة</b><span>قوة شرائية ومخزون مركزي وعلاقات موردين</span></div></li>
+          <li><span class="ic">٣</span><div><b>التحدي</b><span>إيراد يعتمد على عميل داخلي واحد بدرجة مرتفعة</span></div></li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>الأروش التجارية</div>
+        <p class="card-sub">الدور: التجزئة — منافذ بيع المستهلك النهائي</p>
+        <ul class="flist">
+          <li><span class="ic">١</span><div><b>نموذج العمل</b><span>تجزئة بهامش ~35% وعلامة تجارية مرئية للعميل</span></div></li>
+          <li><span class="ic">٢</span><div><b>الميزة</b><span>قرب من السوق وبيانات عملاء ومنافذ تجزئة</span></div></li>
+          <li><span class="ic">٣</span><div><b>التحدي</b><span>إيجارات مرتفعة ورأس مال محتجز في مخزون الفروع</span></div></li>
+        </ul>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>منطق الدمج (أطروحة القيمة)</div>
+      <div class="grid g3" style="margin-top:8px">
+        <div><b style="color:var(--brass)">١. إلغاء الهامش الداخلي</b><p style="color:var(--muted);font-size:13.5px;margin:6px 0 0">الربح الذي تحقّقه سواج على مبيعاتها للأروش يُلغى عند التوحيد — ويتحرّر رأس المال المحتجز في الهامش غير المحقّق داخل المخزون.</p></div>
+        <div><b style="color:var(--brass)">٢. كفاءة رأس المال العامل</b><p style="color:var(--muted);font-size:13.5px;margin:6px 0 0">سلسلة إمداد واحدة تخفض المخزون الاحتياطي المزدوج وتحسّن معدل الدوران وتُقصّر دورة التحويل النقدي.</p></div>
+        <div><b style="color:var(--brass)">٣. توحيد المصروفات</b><p style="color:var(--muted);font-size:13.5px;margin:6px 0 0">دمج الإدارة والمالية والمشتريات وأنظمة الـ ERP يخفض المصروفات العمومية المكرّرة.</p></div>
+      </div>
+      <div class="note no-print"><b>كيفية الاستخدام:</b> النظام يبدأ فارغًا. أدخل القوائم المالية الفعلية لكل شركة في تبويب «المالية والمحاسبية»، وستُحسب القوائم الموحّدة والمؤشرات والرسوم ولوحة القرار تلقائيًا. محرك التوحيد يطبّق استبعاد المعاملات البينية وفق IFRS تلقائيًا.</div>
+    </div>
+  </section>`;
+}
+
+/* ---------- 2. المالية والمحاسبية ---------- */
+const opRows=[['salaries','رواتب وأجور'],['rent','إيجارات'],['marketing','تسويق ودعاية'],['admin','مصروفات إدارية وعمومية'],['depreciation','إهلاك واستهلاك'],['other','مصروفات أخرى']];
+const caRows=[['cash','النقد وما في حكمه'],['receivables','ذمم مدينة (عملاء)'],['inventory','المخزون'],['prepaid','مصروفات مدفوعة مقدمًا'],['other','أصول متداولة أخرى']];
+const faRows=[['property','عقارات وممتلكات'],['fixtures','أثاث وتجهيزات وديكورات'],['vehicles','سيارات ومعدات'],['intangibles','أصول غير ملموسة (شهرة/برمجيات)'],['other','أصول ثابتة أخرى']];
+const clRows=[['payables','ذمم دائنة (موردون)'],['stloans','قروض قصيرة الأجل'],['accruals','مصروفات مستحقة'],['zakat','مخصص الزكاة'],['other','خصوم متداولة أخرى']];
+const nclRows=[['ltloans','قروض طويلة الأجل'],['eosb','مكافأة نهاية الخدمة']];
+const eqRows=[['capital','رأس المال'],['reserves','الاحتياطيات'],['retained','الأرباح المبقاة']];
+
+function inCell(co,grp,key){return `<input class="fin-in" type="number" data-co="${co}" data-grp="${grp}" data-key="${key}" value="${D[co][grp][key]}">`}
+function interCell(key,suffix=''){return `<input class="fin-in" type="number" data-inter="${key}" value="${D.inter[key]}" style="width:140px"> ${suffix}`}
+
+function secFinancial(){
+  return `<section class="section" id="sec-financial">
+    <div class="sec-head"><div class="eyebrow">الدراسة الأولى</div>
+      <h2>التحليل المالي والمحاسبي</h2>
+      <p>تحليل المصروفات والإيرادات والأصول (متداولة وثابتة بأنواعها) والخصوم وحقوق الملكية لكل شركة، ثم قائمة دخل وميزانية <b>موحّدة</b> مع استبعاد المعاملات البينية وفق IFRS.</p>
+    </div>
+
+    <div class="grid g4" id="finKpis"></div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>المعاملات البينية — مدخلات الاستبعاد (IFRS)</div>
+      <p class="card-sub">سواج تبيع للأروش؛ تُستبعد هذه المعاملات عند التوحيد لتفادي تضخيم الإيراد وازدواج الربح في المخزون.</p>
+      <table style="max-width:720px">
+        <tr><td>مبيعات سواج البينية للأروش</td><td class="n">${interCell('sales','ر.س')}</td></tr>
+        <tr><td>هامش ربح سواج على المبيعات البينية</td><td class="n">${interCell('margin','%')}</td></tr>
+        <tr><td>نسبة البضاعة البينية المتبقية في مخزون الأروش آخر المدة</td><td class="n">${interCell('invRetained','%')}</td></tr>
+        <tr><td>الرصيد البيني (ذمم سواج على الأروش)</td><td class="n">${interCell('balance','ر.س')}</td></tr>
+        <tr class="sub"><td>الربح غير المحقّق المُستبعَد من المخزون</td><td class="n elim" id="upVal">—</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>قائمة الدخل</div>
+      <p class="card-sub">عدّل القيم لكل شركة — يُحسب العمود الموحّد تلقائيًا بعد الاستبعاد.</p>
+      <table id="incomeTable"></table>
+    </div>
+
+    <div class="grid g2">
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>الأصول</div>
+        <table id="assetsTable"></table>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>الخصوم وحقوق الملكية</div>
+        <table id="liabTable"></table>
+      </div>
+    </div>
+
+    <div class="grid g2">
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>مقارنة الأداء (ر.س)</div>
+        <div class="chart-box"><canvas id="chFin"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>تركيبة أصول الكيان الموحّد</div>
+        <div class="chart-box"><canvas id="chAssets"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>المؤشرات المالية — قبل وبعد الدمج</div>
+      <p class="card-sub">"قبل" = مجموع الشركتين منفصلتين. "بعد" = الكيان الموحّد (مع أثر التآزر على المصروفات ورأس المال العامل).</p>
+      <table id="ratioTable"></table>
+    </div>
+  </section>`;
+}
+
+/* ---------- 3. السوق والعملاء ---------- */
+function secMarket(){
+  return `<section class="section" id="sec-market">
+    <div class="sec-head"><div class="eyebrow">الدراسة الثانية</div>
+      <h2>تحليل السوق والعملاء</h2>
+      <p>قياس حجم السوق، شرائح العملاء، الموقع التنافسي، وأثر الدمج على القرب من المستهلك النهائي والتحكّم في السلسلة من المصنع إلى المتجر.</p>
+    </div>
+    <div class="grid g3">
+      ${kpiTile('حجم سوق الملابس الرجالية المستهدف','تقدير إقليمي','—',null,'TAM/SAM يُحدَّث ببيانات السوق')}
+      ${kpiTile('الحصة المجمّعة بعد الدمج','تجزئة + جملة','أعلى','up','تكامل أمامي يرفع التحكّم في القناة')}
+      ${kpiTile('قنوات الوصول','منافذ + جملة + رقمي','3 قنوات','up','إمكانية إطلاق التجارة الإلكترونية')}
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>شرائح العملاء بعد الدمج</div>
+      <table>
+        <thead><tr><th>الشريحة</th><th>القناة</th><th>القيمة للكيان الموحّد</th></tr></thead>
+        <tbody>
+          <tr><td>تجار التجزئة وعملاء الجملة الخارجيون</td><td>سواج (جملة)</td><td>إيراد بهامش جملة + استغلال طاقة الشراء</td></tr>
+          <tr><td>المستهلك النهائي في المنافذ</td><td>الأروش (تجزئة)</td><td>هامش أعلى + بيانات سلوك شرائي</td></tr>
+          <tr><td>العميل الرقمي (مقترح)</td><td>متجر إلكتروني موحّد</td><td>نمو منخفض التكلفة يستفيد من مخزون مركزي</td></tr>
+          <tr><td>عملاء المؤسسات/الزي الموحّد</td><td>مبيعات مشاريع</td><td>عقود كميات تستفيد من التكامل الرأسي</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="grid g2">
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>الموقع التنافسي</div>
+        <div class="chart-box sm"><canvas id="chMarket"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>أثر الدمج على السوق</div>
+        <ul class="flist">
+          <li><span class="ic">↑</span><div><b>تحكّم كامل في السلسلة</b><span>من التوريد إلى رفّ المتجر يقلّل نفاد المخزون ويحسّن التوافر</span></div></li>
+          <li><span class="ic">↑</span><div><b>مرونة تسعير</b><span>إلغاء الوسيط الداخلي يتيح تسعيرًا تنافسيًا دون ضغط على الهامش</span></div></li>
+          <li><span class="ic">↑</span><div><b>سرعة الاستجابة للموضة</b><span>قرار شراء وتوزيع موحّد يقصّر زمن الوصول للسوق</span></div></li>
+          <li><span class="ic">!</span><div><b>تركّز المخاطرة</b><span>الاعتماد على سوق واحد (الملابس الرجالية) يتطلّب خطة تنويع</span></div></li>
+        </ul>
+      </div>
+    </div>
+    ${analysisBlock('market','أضف هنا: حجم السوق المستهدف وأرقامه، أبرز المنافسين وحصصهم، شرائح عملائك الفعلية، وتقديرك لأثر الدمج على المبيعات والقنوات.')}
+    ${scorecardBlock('market','بطاقة قياس جاذبية السوق وجاهزية الدمج التجاري')}
+  </section>`;
+}
+
+/* ---------- 4. الاستراتيجية ---------- */
+function secStrategic(){
+  return `<section class="section" id="sec-strategic">
+    <div class="sec-head"><div class="eyebrow">الدراسة الثالثة</div>
+      <h2>الدراسة الاستراتيجية والأهداف</h2>
+      <p>تحديد رؤية الكيان الموحّد، أهداف SMART، وتحليل SWOT الذي يربط القرار بمصادر الميزة التنافسية بدل النظرة المحاسبية وحدها.</p>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>الأهداف الاستراتيجية (SMART)</div>
+      <p class="card-sub">أضف أهدافك ومؤشّراتها ومستهدفاتها وأفقها الزمني — تُحفظ وتظهر في التقرير المطبوع.</p>
+      <div style="overflow-x:auto"><table id="goals-table"></table></div>
+      <div class="sc-foot"><button class="btn sc-add" id="goal-add">＋ إضافة هدف</button></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>تحليل SWOT للكيان الموحّد</div>
+      <p class="card-sub">عدّل البنود أو احذفها أو أضِف غيرها في كل ربع — تُحفظ وتظهر في التقرير.</p>
+      <div class="swot" id="swot-grid" style="margin-top:10px"></div>
+    </div>
+    ${analysisBlock('strategic','أضف هنا: رؤية الكيان الموحّد، أهدافك الفعلية ومستهدفاتها الزمنية، وأي تحليل SWOT خاص بوضعك.')}
+    ${scorecardBlock('strategic','بطاقة قياس التوافق الاستراتيجي')}
+  </section>`;
+}
+
+/* ---------- 5. القانونية والاستشارية ---------- */
+function secLegal(){
+  return `<section class="section" id="sec-legal">
+    <div class="sec-head"><div class="eyebrow">الدراسة الرابعة</div>
+      <h2>الدراسة القانونية والاستشارية</h2>
+      <p>هيكلة الاندماج، الموافقات النظامية في المملكة، والفحص النافي للجهالة (Due Diligence)، مع رصد المخاطر القانونية وآلية معالجتها قبل الإغلاق.</p>
+    </div>
+    <div class="grid g2">
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>الموافقات والمتطلبات النظامية (السعودية)</div>
+        <div id="list-legalApprovals" class="ilist"></div>
+        <div class="sc-foot"><button class="btn sc-add" id="listadd-legalApprovals">＋ إضافة بند</button></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>قائمة الفحص النافي للجهالة</div>
+        <div id="list-legalDD" class="ilist"></div>
+        <div class="sc-foot"><button class="btn sc-add" id="listadd-legalDD">＋ إضافة بند</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>هيكلة الاندماج المقترحة</div>
+      <div class="note"><b>التوصية الأولية:</b> اندماج بالضمّ (الكيان المستمر يستوعب الآخر) مع تقييم مستقل للأصول وتسوية الأرصدة البينية قبل الإغلاق، وإعداد اتفاقية اندماج تحدّد نِسَب الملكية وآلية تقييم الحصص ومعالجة مكافآت نهاية الخدمة. يُنصح باعتماد تاريخ سريان محاسبي موحّد لتفادي ازدواج القوائم.</div>
+    </div>
+    ${analysisBlock('legal','أضف هنا: القضايا أو الالتزامات القانونية القائمة، حالة التراخيص والعقود، وملاحظات مستشارك القانوني حول هيكلة الدمج.')}
+    ${scorecardBlock('legal','بطاقة قياس الجاهزية القانونية')}
+  </section>`;
+}
+
+/* ---------- 6. الموارد البشرية ---------- */
+function secHr(){
+  return `<section class="section" id="sec-hr">
+    <div class="sec-head"><div class="eyebrow">الدراسة الخامسة</div>
+      <h2>دراسة الموارد البشرية والقوى الوظيفية</h2>
+      <p>الهيكل التنظيمي بعد الدمج، تحليل التكرار الوظيفي وإعادة التوزيع، دمج الثقافة المؤسسية، والاحتفاظ بالكفاءات الحرجة.</p>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>تحليل القوى الوظيفية</div>
+      <p class="card-sub">عدّل الصفوف أو احذفها أو أضِف إدارات أخرى — تُحفظ وتظهر في التقرير.</p>
+      <div style="overflow-x:auto"><table id="hrforce-table"></table></div>
+      <div class="sc-foot"><button class="btn sc-add" id="hrforce-add">＋ إضافة إدارة</button></div>
+    </div>
+    <div class="grid g2">
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>دمج الثقافة المؤسسية</div>
+        <div id="list-hrCulture" class="ilist"></div>
+        <div class="sc-foot"><button class="btn sc-add" id="listadd-hrCulture">＋ إضافة بند</button></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>الاحتفاظ والمخاطر العمالية</div>
+        <div id="list-hrRetention" class="ilist"></div>
+        <div class="sc-foot"><button class="btn sc-add" id="listadd-hrRetention">＋ إضافة بند</button></div>
+      </div>
+    </div>
+    ${analysisBlock('hr','أضف هنا: أعداد الموظفين الفعلية بكل إدارة، الوظائف المكرّرة، خطة إعادة التوزيع، والكفاءات الحرجة الواجب الاحتفاظ بها.')}
+    ${scorecardBlock('hr','بطاقة قياس جاهزية الموارد البشرية')}
+  </section>`;
+}
+
+/* ---------- 7. التكامل والتآزر (المقترح) ---------- */
+function secIntegration(){
+  return `<section class="section" id="sec-integration">
+    <div class="sec-head"><div class="eyebrow">الدراسة المقترحة (إضافة تطويرية)</div>
+      <h2>التكامل التشغيلي والتحول الرقمي وتحقيق التآزر</h2>
+      <p>هذه الإضافة هي ما يرفع الدراسة من تحليل نظري إلى خطة قابلة للتنفيذ: كيف نُحقّق التآزر فعليًا عبر توحيد الأنظمة (ERP)، وخطة الأيام المئة الأولى، وسجل المخاطر — لأن أغلب صفقات الدمج لا تفشل في التحليل بل في <b>التنفيذ بعد الإغلاق</b>.</p>
+    </div>
+    <div class="grid g3" id="synKpis"></div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>مصادر التآزر القابلة للقياس</div>
+      <table>
+        <thead><tr><th>المصدر</th><th>الآلية</th><th>الأثر السنوي المقدّر (ر.س)</th></tr></thead>
+        <tbody>
+          <tr><td>خفض المصروفات العمومية المكرّرة</td><td>دمج الإدارة والمالية والمشتريات ونظام ERP</td><td class="n" id="synOv">—</td></tr>
+          <tr><td>تحرير رأس المال العامل (لمرة واحدة)</td><td>توحيد المخزون وتسريع الدوران وإلغاء البضاعة الاحتياطية المزدوجة</td><td class="n" id="synWc">—</td></tr>
+          <tr><td>تآزر إيرادي</td><td>قناة رقمية + مبيعات متقاطعة + عقود مؤسسات</td><td class="n" id="synRev">—</td></tr>
+          <tr class="total"><td>إجمالي التآزر التشغيلي السنوي المتكرر</td><td></td><td class="n" id="synTot">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>خطة التكامل — الأيام المئة الأولى</div>
+      <div class="phase"><div class="stage">يوم 1–15</div><div><b>الحوكمة والتأسيس</b><p>تشكيل لجنة الدمج، اعتماد تاريخ السريان المحاسبي، تسوية الأرصدة البينية، وتثبيت قيادة كل وظيفة.</p></div></div>
+      <div class="phase"><div class="stage">يوم 16–45</div><div><b>توحيد الأنظمة المالية</b><p>دمج دليل الحسابات، توحيد منصة ERP (Odoo)، وضبط صلاحيات الوصول وفصل المهام.</p></div></div>
+      <div class="phase"><div class="stage">يوم 46–70</div><div><b>سلسلة الإمداد والمخزون</b><p>توحيد المستودعات والمشتريات، تصفية البضاعة الراكدة، وضبط سياسة مخزون موحّدة.</p></div></div>
+      <div class="phase"><div class="stage">يوم 71–100</div><div><b>الإطلاق والقياس</b><p>تشغيل الهيكل الموحّد، إطلاق القناة الرقمية تجريبيًا، وقياس مؤشرات التآزر مقابل المستهدف.</p></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>سجل المخاطر وخطة المعالجة</div>
+      <table>
+        <thead><tr><th>الخطر</th><th>الاحتمال</th><th>الأثر</th><th>المعالجة</th></tr></thead>
+        <tbody>
+          <tr><td>تعثّر دمج أنظمة ERP</td><td><span class="pill warn">متوسط</span></td><td><span class="pill neg">مرتفع</span></td><td>تسليم مُدار لمهندس داخلي + شروط مالية مرتبطة بالتسليمات</td></tr>
+          <tr><td>أخطاء في تسوية الأرصدة البينية</td><td><span class="pill warn">متوسط</span></td><td><span class="pill neg">مرتفع</span></td><td>تدقيق مستقل قبل الإغلاق وتطبيق استبعاد IFRS</td></tr>
+          <tr><td>فقدان كفاءات حرجة</td><td><span class="pill warn">متوسط</span></td><td><span class="pill warn">متوسط</span></td><td>حوافز احتفاظ وخطة تعاقب</td></tr>
+          <tr><td>مقاومة التغيير الثقافي</td><td><span class="pill neg">مرتفع</span></td><td><span class="pill warn">متوسط</span></td><td>قيادة تغيير وتواصل داخلي مكثّف</td></tr>
+          <tr><td>عدم تحقّق التآزر المستهدف</td><td><span class="pill warn">متوسط</span></td><td><span class="pill neg">مرتفع</span></td><td>لوحة مؤشرات شهرية ومساءلة عن كل مصدر تآزر</td></tr>
+        </tbody>
+      </table>
+    </div>
+    ${analysisBlock('integration','أضف هنا: مصادر التآزر المقدّرة بالأرقام، مسؤول كل مرحلة من خطة التكامل، والمخاطر الخاصة بوضعك وخطة معالجتها.')}
+    ${scorecardBlock('integration','بطاقة قياس جاهزية التنفيذ والتآزر')}
+  </section>`;
+}
+
+/* ---------- 8. لوحة القرار ---------- */
+function secDashboard(){
+  return `<section class="section" id="sec-dashboard">
+    <div class="sec-head"><div class="eyebrow">المخرج النهائي</div>
+      <h2>لوحة القرار التنفيذية</h2>
+      <p>تلخيص لكل الدراسات في مؤشر قرار واحد، مع أبرز الأرقام المالية للكيان الموحّد والتوصية النهائية الجاهزة للعرض على الإدارة.</p>
+    </div>
+    <div class="grid g4" id="dashKpis"></div>
+    <div class="grid g2">
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>مؤشر القرار الموزون</div>
+        <div class="gauge-wrap" style="padding-top:8px">
+          <div id="gauge"></div>
+          <div class="gauge-score" id="gScore">—</div>
+          <div class="gauge-verdict" id="gVerdict">—</div>
+          <div style="color:var(--muted);font-size:13px;margin-top:6px">متوسط موزون لدرجات الدراسات الستّ</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>توازن الدراسات</div>
+        <div class="chart-box"><canvas id="chRadar"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>الملخص التنفيذي والتوصية</div>
+      <div id="execSummary" style="font-size:14.5px;line-height:1.9"></div>
+    </div>
+    <div class="card no-print">
+      <div class="card-title"><span class="dot"></span>ملاحظات الإدارة (تُطبع في التقرير)</div>
+      <textarea class="edit" id="mgmtNotes" rows="4" placeholder="أضف ملاحظات أو شروطًا أو قرار الإدارة هنا..."></textarea>
+    </div>
+  </section>`;
+}
+
+/* ---------- أدوات بناء HTML ---------- */
+function kpiTile(label,sub,value,dir,note){
+  const d = dir? `<div class="delta ${dir}">${dir==='up'?'▲':'▼'} ${note||''}</div>`:(note?`<div style="color:var(--muted);font-size:12px;margin-top:6px">${note}</div>`:'');
+  return `<div class="kpi"><div class="label">${label}</div><div class="value">${value}<br><small>${sub}</small></div>${d}</div>`;
+}
+function scoreBox(key,label){
+  return `<div class="scorebox"><label>${label}</label>
+    <input type="range" min="0" max="100" value="${D.scores[key]}" data-score="${key}">
+    <span class="sval" id="sval-${key}">${D.scores[key]}</span></div>`;
+}
+function analysisBlock(sec,guide){
+  return `<div class="card">
+    <div class="card-title"><span class="dot"></span>تحليلك وإضافاتك لهذا القسم</div>
+    <p class="card-sub">${guide}</p>
+    <textarea class="edit secnote" id="note-${sec}" rows="6" placeholder="اكتب هنا تحليلك وملاحظاتك وأي بنود تريد إضافتها — ستُحفظ وتظهر في التقرير المطبوع (PDF)..."></textarea>
+  </div>`;
+}
+
+/* ---------- بطاقة القياس التفاعلية ---------- */
+const CARD_SEEDS={
+  market:[['وضوح حجم السوق المستهدف',12],['الحصة السوقية المجمّعة بعد الدمج',15],['قوة الموقع التنافسي',15],['تنوّع شرائح العملاء',12],['التحكّم في سلسلة القيمة (تكامل رأسي)',15],['جاهزية القناة الرقمية',10],['مرونة التسعير بعد إلغاء الوسيط',11],['إدارة مخاطر تركّز السوق',10]],
+  strategic:[['وضوح الرؤية والأهداف (SMART)',18],['قوة التوافق الاستراتيجي بين الكيانين',20],['جاذبية فرص النمو',17],['متانة الميزة التنافسية المستدامة',15],['معالجة نقاط الضعف الداخلية',15],['إدارة التهديدات الخارجية',15]],
+  legal:[['اكتمال التراخيص والسجلات',15],['الموافقات النظامية (تجارة/منافسة/زكاة)',18],['جاهزية هيكلة الاندماج واتفاقياته',17],['الفحص النافي للجهالة',18],['إدارة المنازعات والالتزامات المحتملة',17],['تسوية الأرصدة والعقود البينية',15]],
+  hr:[['وضوح الهيكل الموحّد وتحليل الازدواج',15],['جودة بيانات القوى العاملة',10],['الاحتفاظ بالكفاءات الحرجة',15],['خطة إعادة التوزيع/التسريح',12],['التوافق الثقافي وخطة الدمج',12],['الامتثال النظامي (نهاية الخدمة/التأمينات/التوطين)',12],['مواءمة الأجور والسياسات',12],['إدارة التغيير والتواصل',7],['جاهزية نظام الموارد والرواتب (Odoo)',5]],
+  integration:[['جاهزية توحيد أنظمة ERP (Odoo)',20],['خطة الأيام المئة ووضوح المسؤوليات',15],['قابلية تحقيق وفورات المصروفات',17],['قابلية تحرير رأس المال العامل',15],['توحيد سلسلة الإمداد والمخزون',18],['جاهزية إدارة المخاطر',15]],
+};
+function ensureCards(){
+  if(!D.cards) D.cards={};
+  for(const sec in CARD_SEEDS){
+    if(!Array.isArray(D.cards[sec])) D.cards[sec]=CARD_SEEDS[sec].map(([c,w])=>({c,w,a:0,t:100}));
+  }
+}
+function isAdmin(){ return !!(session&&session.admin); }
+function secLevel(sec){ if(!session)return 'none'; if(session.admin)return 'edit'; return (session.acc&&session.acc[sec])||'none'; }
+function canView(sec){ return isAdmin()|| secLevel(sec)!=='none'; }
+function canEditSec(sec){ return isAdmin()|| secLevel(sec)==='edit'; }
+function blankAcc(level){ const o={}; SECTIONS.forEach(([k])=>o[k]=level); return o; }
+
+function scorecardBlock(sec,title){
+  return `<div class="card">
+    <div class="card-title"><span class="dot"></span>${title} — قياس تفاعلي</div>
+    <p class="card-sub">أضف المعايير وحدّد الوزن والقيمة المُحقَّقة مقابل المستهدف. للمعايير التقديرية اجعل المستهدف 100 وأدخل تقييمك (0–100) في «المُحقَّق». تُحسب درجة القسم تلقائيًا وتنعكس على لوحة القرار.</p>
+    <div style="overflow-x:auto"><table id="sc-${sec}"></table></div>
+    <div class="sc-foot">
+      <button class="btn sc-add" data-add="${sec}">＋ إضافة معيار</button>
+      <div class="sc-score">درجة القسم المحسوبة: <b id="scv-${sec}" class="num">0</b> <small>/100</small></div>
+    </div>
+  </div>`;
+}
+function stStatus(s){ if(s>=75)return{t:'مكتمل',c:'pos'}; if(s>=50)return{t:'جزئي',c:'info'}; if(s>=25)return{t:'قيد الإعداد',c:'warn'}; return{t:'لم يبدأ',c:'neg'}; }
+
+function renderScorecard(sec){
+  const arr=D.cards[sec]||[];
+  let h=`<thead><tr><th>المعيار</th><th class="n">الوزن%</th><th class="n">المُحقَّق</th><th class="n">المستهدف</th><th class="n">الدرجة%</th><th>الحالة</th><th class="n">المساهمة</th><th></th></tr></thead><tbody>`;
+  arr.forEach((r,i)=>{
+    h+=`<tr>
+      <td><input class="sc-in scc" data-sec="${sec}" data-i="${i}" data-f="c" value="${(r.c||'').replace(/"/g,'&quot;')}"></td>
+      <td class="n"><input class="sc-in sc-num" style="width:62px" type="number" data-sec="${sec}" data-i="${i}" data-f="w" value="${r.w}"></td>
+      <td class="n"><input class="sc-in sc-num" type="number" data-sec="${sec}" data-i="${i}" data-f="a" value="${r.a}"></td>
+      <td class="n"><input class="sc-in sc-num" type="number" data-sec="${sec}" data-i="${i}" data-f="t" value="${r.t}"></td>
+      <td class="n"><b id="drv-${sec}-${i}" class="num">0%</b></td>
+      <td><span id="st-${sec}-${i}" class="pill info">—</span></td>
+      <td class="n"><span id="ct-${sec}-${i}" class="num">0</span></td>
+      <td><button class="tbtn del sc-del" data-del="${sec}" data-i="${i}">حذف</button></td>
+    </tr>`;
+  });
+  const el=document.getElementById('sc-'+sec); if(!el)return;
+  el.innerHTML=h+'</tbody>';
+  el.oninput=(e)=>{const t=e.target; if(!t.dataset||t.dataset.sec==null)return; const f=t.dataset.f; let v=t.value; if(f!=='c')v=parseFloat(v)||0; D.cards[sec][+t.dataset.i][f]=v; updateScores(sec); saveDB();};
+  el.onclick=(e)=>{const b=e.target.closest('[data-del]'); if(b){D.cards[sec].splice(+b.dataset.i,1); renderScorecard(sec); updateScores(sec); saveDB();}};
+  const add=document.querySelector('[data-add="'+sec+'"]');
+  if(add) add.onclick=()=>{D.cards[sec].push({c:'معيار جديد',w:10,a:0,t:100}); renderScorecard(sec); updateScores(sec); saveDB();};
+  applyScPerms(sec);
+  updateScores(sec);
+}
+function updateScores(sec){
+  const arr=D.cards[sec]||[]; let totW=0, acc=0;
+  arr.forEach((r,i)=>{
+    const sc = (+r.t>0)? Math.min(100, (+r.a)/(+r.t)*100) : 0;
+    totW+=(+r.w||0); acc+=sc*(+r.w||0);
+    const drv=document.getElementById('drv-'+sec+'-'+i); if(drv)drv.textContent=Math.round(sc)+'%';
+    const st=document.getElementById('st-'+sec+'-'+i); if(st){const v=stStatus(sc); st.textContent=v.t; st.className='pill '+v.c;}
+    const ct=document.getElementById('ct-'+sec+'-'+i); if(ct)ct.textContent=Math.round(sc*(+r.w||0)/100);
+  });
+  D.scores[sec]= totW>0? Math.round(acc/totW):0;
+  const scv=document.getElementById('scv-'+sec); if(scv)scv.textContent=D.scores[sec];
+  renderDash();
+}
+function applyScPerms(sec){
+  const can=canEditSec(sec);
+  document.querySelectorAll('#sc-'+sec+' .sc-in').forEach(i=>i.disabled=!can);
+  document.querySelectorAll('[data-del="'+sec+'"]').forEach(b=>b.style.display=can?'':'none');
+  const add=document.querySelector('[data-add="'+sec+'"]'); if(add)add.style.display=can?'':'none';
+}
+
+/* ---------- محرّر الأهداف وSWOT (القسم الاستراتيجي) ---------- */
+function esc(s){return (s||'').replace(/"/g,'&quot;');}
+function ensureExtras(){
+  if(!Array.isArray(D.goals)) D.goals=[
+    {g:'تحويل كفاءة رأس المال',k:'معدل دوران المخزون',t:'تحسين ≥ 15%',h:'12 شهرًا'},
+    {g:'تقليص المصروفات المكرّرة',k:'نسبة المصروفات العمومية/الإيراد',t:'خفض ≥ 1.5 نقطة',h:'9 أشهر'},
+    {g:'تحرير نقد محتجز',k:'رأس المال العامل',t:'تحرير ≥ 5 م.ر.س',h:'12 شهرًا'},
+    {g:'توحيد الأنظمة (ERP)',k:'نسبة العمليات على نظام واحد',t:'100%',h:'6 أشهر'},
+    {g:'إطلاق قناة رقمية',k:'مساهمة المبيعات الرقمية',t:'≥ 8% من الإيراد',h:'18 شهرًا'},
+  ];
+  if(!D.swot) D.swot={
+    s:['تكامل رأسي كامل من الجملة إلى التجزئة','قوة شرائية مركزية وعلاقات موردين راسخة','إلغاء هامش الوساطة الداخلي وتحرير رأس المال','بيانات عملاء التجزئة + كفاءة التوريد'],
+    w:['ثقافتان تشغيليتان مختلفتان (جملة مقابل تجزئة)','تعقيد دمج الأنظمة والذمم البينية','تركّز في فئة واحدة (الملابس الرجالية)','احتمال ازدواج وظيفي يتطلّب إعادة هيكلة'],
+    o:['إطلاق تجارة إلكترونية بمخزون موحّد','التوسّع في عقود المؤسسات والزي الموحّد','قوة تفاوضية أكبر مع الموردين والمؤجّرين','توسّع جغرافي مدعوم بسلسلة إمداد واحدة'],
+    t:['تقلّب الطلب وموسمية الموضة','منافسة العلامات العالمية والتجارة الإلكترونية','متطلبات تنظيمية للاندماج (المنافسة/التجارة)','مخاطر التنفيذ خلال فترة الدمج الانتقالية'],
+  };
+  if(!D.lists) D.lists={
+    legalApprovals:[
+      {b:'وزارة التجارة',s:'قرار الاندماج، تعديل/إلغاء السجلات التجارية وتوحيد الكيان'},
+      {b:'الهيئة العامة للمنافسة',s:'إشعار التركّز الاقتصادي إذا تجاوز الحدّ النظامي للإيرادات'},
+      {b:'هيئة الزكاة والضريبة والجمارك',s:'المعالجة الزكوية/الضريبية للاندماج وتوحيد التسجيل الضريبي'},
+      {b:'وزارة الموارد البشرية',s:'نقل العقود، التأمينات الاجتماعية، ونِسَب التوطين'},
+      {b:'العقود والإيجارات',s:'أحكام الإحالة والتنازل في عقود الموردين والمنافذ'},
+    ],
+    legalDD:[
+      {b:'قانوني',s:'التراخيص، المنازعات القائمة، الالتزامات المحتملة'},
+      {b:'مالي',s:'تدقيق القوائم، الأرصدة البينية، جودة الأرباح'},
+      {b:'ضريبي/زكوي',s:'ربوط سابقة، التزامات غير مسدّدة'},
+      {b:'تشغيلي',s:'عقود التوريد، الإيجارات، الأصول والمخزون'},
+      {b:'عمالي',s:'مستحقات نهاية الخدمة، نزاعات عمالية'},
+    ],
+    hrCulture:[
+      {b:'تقييم الفجوة الثقافية',s:'الجملة موجّهة بالكفاءة، التجزئة موجّهة بالعميل'},
+      {b:'قيادة التغيير',s:'لجنة دمج وخطة تواصل داخلي شفّافة'},
+      {b:'توحيد السياسات',s:'الرواتب، الحوافز، التقييم، والمسارات الوظيفية'},
+    ],
+    hrRetention:[
+      {b:'الكفاءات الحرجة',s:'حوافز احتفاظ لمن يملكون معرفة تشغيلية حرجة'},
+      {b:'مكافأة نهاية الخدمة',s:'تسوية الالتزامات بدقّة عند نقل العقود'},
+      {b:'التوطين',s:'الحفاظ على نِسَب التوطين النظامية بعد الدمج'},
+    ],
+  };
+  if(!Array.isArray(D.hrforce)) D.hrforce=[
+    {d:'المالية والمحاسبة',c:'فريقان منفصلان',a:'فريق موحّد',x:'دمج وإعادة توزيع'},
+    {d:'المشتريات والتوريد',c:'مزدوج',a:'مركزي',x:'تعزيز وتمكين'},
+    {d:'المبيعات والتجزئة',c:'فرق الفروع',a:'كما هو + رقمي',x:'إبقاء وتطوير'},
+    {d:'تقنية المعلومات/ERP',c:'جهود متفرّقة',a:'وحدة موحّدة',x:'استثمار'},
+    {d:'الإدارة العليا',c:'هيكلان',a:'هيكل واحد',x:'إعادة هيكلة'},
+  ];
+}
+function applyStratPerms(){
+  const can=canEditSec('strategic');
+  document.querySelectorAll('#goals-table .g-in, #swot-grid .sw-in').forEach(i=>i.disabled=!can);
+  document.querySelectorAll('.g-del, .sw-del, .swot-add').forEach(b=>b.style.display=can?'':'none');
+  const ga=document.getElementById('goal-add'); if(ga)ga.style.display=can?'':'none';
+}
+function renderGoals(){
+  const el=document.getElementById('goals-table'); if(!el)return;
+  let h=`<thead><tr><th>الهدف</th><th>المؤشر</th><th>المستهدف</th><th>الأفق الزمني</th><th></th></tr></thead><tbody>`;
+  D.goals.forEach((r,i)=>{
+    h+=`<tr>
+      <td><input class="g-in scc" data-i="${i}" data-f="g" value="${esc(r.g)}"></td>
+      <td><input class="g-in scc" data-i="${i}" data-f="k" value="${esc(r.k)}"></td>
+      <td><input class="g-in scc" data-i="${i}" data-f="t" value="${esc(r.t)}"></td>
+      <td><input class="g-in scc" data-i="${i}" data-f="h" value="${esc(r.h)}"></td>
+      <td><button class="tbtn del g-del" data-i="${i}">حذف</button></td>
+    </tr>`;
+  });
+  el.innerHTML=h+'</tbody>';
+  el.oninput=(e)=>{const t=e.target; if(t.dataset.i==null||!t.dataset.f)return; D.goals[+t.dataset.i][t.dataset.f]=t.value; saveDB();};
+  el.onclick=(e)=>{const b=e.target.closest('.g-del'); if(b){D.goals.splice(+b.dataset.i,1); renderGoals(); saveDB();}};
+  const add=document.getElementById('goal-add'); if(add)add.onclick=()=>{D.goals.push({g:'',k:'',t:'',h:''}); renderGoals(); saveDB();};
+  applyStratPerms();
+}
+/* ---------- محرّر القوائم (قانوني/موارد) والجدول الوظيفي ---------- */
+function renderItemList(key,sec){
+  const el=document.getElementById('list-'+key); if(!el)return;
+  const arr=D.lists[key]||[];
+  el.innerHTML=arr.map((r,i)=>`<div class="il-row">
+    <div class="il-fields">
+      <input class="il-in il-b" data-i="${i}" data-f="b" value="${esc(r.b)}" placeholder="العنوان">
+      <input class="il-in il-s" data-i="${i}" data-f="s" value="${esc(r.s)}" placeholder="الوصف">
+    </div>
+    <button class="tbtn del il-del" data-i="${i}">حذف</button>
+  </div>`).join('');
+  el.oninput=(e)=>{const t=e.target; if(!t.dataset.f)return; D.lists[key][+t.dataset.i][t.dataset.f]=t.value; saveDB();};
+  el.onclick=(e)=>{const b=e.target.closest('.il-del'); if(b){D.lists[key].splice(+b.dataset.i,1); renderItemList(key,sec); saveDB();}};
+  const add=document.getElementById('listadd-'+key); if(add)add.onclick=()=>{D.lists[key].push({b:'',s:''}); renderItemList(key,sec); saveDB();};
+  applyListPerms(key,sec);
+}
+function applyListPerms(key,sec){
+  const can=canEditSec(sec);
+  document.querySelectorAll('#list-'+key+' .il-in').forEach(i=>i.disabled=!can);
+  document.querySelectorAll('#list-'+key+' .il-del').forEach(b=>b.style.display=can?'':'none');
+  const add=document.getElementById('listadd-'+key); if(add)add.style.display=can?'':'none';
+}
+function renderHrForce(){
+  const el=document.getElementById('hrforce-table'); if(!el)return;
+  let h=`<thead><tr><th>الإدارة</th><th>الوضع الحالي</th><th>بعد الدمج</th><th>الإجراء</th><th></th></tr></thead><tbody>`;
+  D.hrforce.forEach((r,i)=>{
+    h+=`<tr>
+      <td><input class="hf-in scc" data-i="${i}" data-f="d" value="${esc(r.d)}"></td>
+      <td><input class="hf-in scc" data-i="${i}" data-f="c" value="${esc(r.c)}"></td>
+      <td><input class="hf-in scc" data-i="${i}" data-f="a" value="${esc(r.a)}"></td>
+      <td><input class="hf-in scc" data-i="${i}" data-f="x" value="${esc(r.x)}"></td>
+      <td><button class="tbtn del hf-del" data-i="${i}">حذف</button></td>
+    </tr>`;
+  });
+  el.innerHTML=h+'</tbody>';
+  el.oninput=(e)=>{const t=e.target; if(t.dataset.i==null||!t.dataset.f)return; D.hrforce[+t.dataset.i][t.dataset.f]=t.value; saveDB();};
+  el.onclick=(e)=>{const b=e.target.closest('.hf-del'); if(b){D.hrforce.splice(+b.dataset.i,1); renderHrForce(); saveDB();}};
+  const add=document.getElementById('hrforce-add'); if(add)add.onclick=()=>{D.hrforce.push({d:'',c:'',a:'',x:''}); renderHrForce(); saveDB();};
+  applyHrForcePerms();
+}
+function applyHrForcePerms(){
+  const can=canEditSec('hr');
+  document.querySelectorAll('#hrforce-table .hf-in').forEach(i=>i.disabled=!can);
+  document.querySelectorAll('#hrforce-table .hf-del').forEach(b=>b.style.display=can?'':'none');
+  const a=document.getElementById('hrforce-add'); if(a)a.style.display=can?'':'none';
+}
+const SWOT_META=[['s','◆ نقاط القوة'],['w','◆ نقاط الضعف'],['o','◆ الفرص'],['t','◆ التهديدات']];
+function renderSwot(){
+  const grid=document.getElementById('swot-grid'); if(!grid)return;
+  grid.innerHTML=SWOT_META.map(([k,label])=>{
+    const items=(D.swot[k]||[]).map((txt,i)=>`<div class="swot-item"><input class="sw-in" data-q="${k}" data-i="${i}" value="${esc(txt)}"><button class="tbtn del sw-del" data-qdel="${k}" data-i="${i}">✕</button></div>`).join('');
+    return `<div class="q ${k}"><h4>${label}</h4><div class="swot-items">${items}</div><button class="btn sc-add swot-add" data-qadd="${k}">＋ إضافة بند</button></div>`;
+  }).join('');
+  grid.oninput=(e)=>{const t=e.target; if(!t.classList.contains('sw-in'))return; D.swot[t.dataset.q][+t.dataset.i]=t.value; saveDB();};
+  grid.onclick=(e)=>{
+    const del=e.target.closest('.sw-del'); if(del){D.swot[del.dataset.qdel].splice(+del.dataset.i,1); renderSwot(); saveDB(); return;}
+    const add=e.target.closest('.swot-add'); if(add){D.swot[add.dataset.qadd].push(''); renderSwot(); saveDB();}
+  };
+  applyStratPerms();
+}
+
+/* ============================================================
+   الربط والحساب
+   ============================================================ */
+function bindFinInputs(){
+  document.querySelectorAll('.fin-in').forEach(inp=>{
+    inp.addEventListener('input',()=>{
+      const v = parseFloat(inp.value)||0;
+      if(inp.dataset.inter){ D.inter[inp.dataset.inter]=v; }
+      else { D[inp.dataset.co][inp.dataset.grp][inp.dataset.key]=v; }
+      computeAll();
+    });
+  });
+}
+function bindScores(){
+  document.querySelectorAll('[data-score]').forEach(r=>{
+    r.addEventListener('input',()=>{
+      D.scores[r.dataset.score]=parseInt(r.value);
+      document.getElementById('sval-'+r.dataset.score).textContent=r.value;
+      renderDash();saveDB();
+    });
+  });
+}
+
+function computeAll(){
+  const s=incomeStatement(D.swaj), l=incomeStatement(D.laroche), c=consolidated();
+  document.getElementById('upVal').textContent = fmt(unrealizedProfit());
+
+  // KPIs مالية
+  const synOpex = D.syn.overhead;
+  document.getElementById('finKpis').innerHTML =
+    kpiTile('إيراد الكيان الموحّد','بعد استبعاد البيني',`<span class="num">${fmt(c.revenue)}</span>`,null,'ر.س') +
+    kpiTile('صافي ربح موحّد','بعد الزكاة',`<span class="num">${fmt(c.net)}</span>`,null,'ر.س') +
+    kpiTile('مجمل الربح الموحّد',pct(c.gross/c.revenue*100)+' هامش',`<span class="num">${fmt(c.gross)}</span>`,null,'ر.س') +
+    kpiTile('رأس المال العامل',`السيولة ${fmt1(c.ca/c.cl)}×`,`<span class="num">${fmt(c.ca-c.cl)}</span>`,'up','ر.س');
+
+  // قائمة الدخل
+  document.getElementById('incomeTable').innerHTML = incomeTableHTML(s,l,c);
+  // الميزانية
+  document.getElementById('assetsTable').innerHTML = assetsTableHTML(c);
+  document.getElementById('liabTable').innerHTML = liabTableHTML(c);
+  // المؤشرات
+  document.getElementById('ratioTable').innerHTML = ratioTableHTML(s,l,c);
+  // التآزر
+  document.getElementById('synOv').textContent=fmt(D.syn.overhead);
+  document.getElementById('synWc').textContent=fmt(D.syn.wcRelease);
+  document.getElementById('synRev').textContent=fmt(D.syn.revenueSyn);
+  document.getElementById('synTot').textContent=fmt(D.syn.overhead+D.syn.revenueSyn);
+  document.getElementById('synKpis').innerHTML =
+    kpiTile('تآزر متكرر سنويًا','مصروفات + إيراد',`<span class="num">${fmt(D.syn.overhead+D.syn.revenueSyn)}</span>`,'up','ر.س') +
+    kpiTile('نقد محرّر لمرة واحدة','رأس مال عامل',`<span class="num">${fmt(D.syn.wcRelease)}</span>`,'up','ر.س') +
+    kpiTile('ربح غير محقّق مُستبعَد','من المخزون',`<span class="num">${fmt(unrealizedProfit())}</span>`,null,'أثر IFRS');
+
+  if(document.getElementById('sec-financial').classList.contains('active')) renderFinCharts();
+  renderDash();
+  saveDB();
+}
+
+function row(label,a,b,c,opts={}){
+  const cls = opts.cls||'';
+  const elim = opts.elim?' elim':'';
+  return `<tr class="${cls}"><td>${label}</td><td class="n">${a==null?'':'<span class="num">'+fmt(a)+'</span>'}</td><td class="n">${b==null?'':'<span class="num">'+fmt(b)+'</span>'}</td><td class="n${elim}"><span class="num">${fmt(c)}</span></td></tr>`;
+}
+function incomeTableHTML(s,l,c){
+  return `<thead><tr><th>البند</th><th class="n">سواج</th><th class="n">الأروش</th><th class="n">الموحّد</th></tr></thead><tbody>
+    ${row('الإيرادات',s.revenue,l.revenue,c.revenue)}
+    ${row('(–) تكلفة المبيعات',s.cogs,l.cogs,c.cogs)}
+    <tr class="sub"><td>(–) استبعاد المبيعات البينية</td><td class="n"></td><td class="n"></td><td class="n elim"><span class="num">(${fmt(D.inter.sales)})</span></td></tr>
+    <tr class="sub"><td>(+) ربح غير محقّق في المخزون</td><td class="n"></td><td class="n"></td><td class="n elim"><span class="num">${fmt(unrealizedProfit())}</span></td></tr>
+    ${row('مجمل الربح',s.gross,l.gross,c.gross,{cls:'sub'})}
+    ${row('(–) المصروفات التشغيلية',s.opex,l.opex,c.opex)}
+    ${row('الربح التشغيلي',s.ebit,l.ebit,c.ebit,{cls:'sub'})}
+    ${row('(–) مصروفات تمويلية',s.finance,l.finance,c.finance)}
+    ${row('الربح قبل الزكاة',s.pbt,l.pbt,c.pbt)}
+    ${row('(–) الزكاة',s.zakat,l.zakat,c.zakat)}
+    ${row('صافي الربح',s.net,l.net,c.net,{cls:'total'})}
+  </tbody>`;
+}
+function assetsTableHTML(c){
+  const s=D.swaj,l=D.laroche;
+  let h=`<thead><tr><th>الأصول</th><th class="n">سواج</th><th class="n">الأروش</th><th class="n">الموحّد</th></tr></thead><tbody>`;
+  h+=`<tr class="sub"><td colspan="4">الأصول المتداولة</td></tr>`;
+  caRows.forEach(([k,lbl])=>{
+    let cons = s.ca[k]+l.ca[k];
+    if(k==='receivables') cons-=D.inter.balance;
+    if(k==='inventory') cons-=unrealizedProfit();
+    h+=row(lbl, s.ca[k], l.ca[k], cons, {elim:(k==='receivables'||k==='inventory')});
+  });
+  h+=row('مجموع المتداول', caTotal(s), caTotal(l), c.ca,{cls:'sub'});
+  h+=`<tr class="sub"><td colspan="4">الأصول الثابتة</td></tr>`;
+  faRows.forEach(([k,lbl])=> h+=row(lbl,s.fa[k],l.fa[k],s.fa[k]+l.fa[k]));
+  h+=row('مجموع الثابت', faTotal(s), faTotal(l), c.fa,{cls:'sub'});
+  h+=row('إجمالي الأصول', caTotal(s)+faTotal(s), caTotal(l)+faTotal(l), c.assets,{cls:'total'});
+  return h+'</tbody>';
+}
+function liabTableHTML(c){
+  const s=D.swaj,l=D.laroche;
+  let h=`<thead><tr><th>الخصوم وحقوق الملكية</th><th class="n">سواج</th><th class="n">الأروش</th><th class="n">الموحّد</th></tr></thead><tbody>`;
+  h+=`<tr class="sub"><td colspan="4">الخصوم المتداولة</td></tr>`;
+  clRows.forEach(([k,lbl])=>{
+    let cons=s.cl[k]+l.cl[k];
+    if(k==='payables') cons-=D.inter.balance;
+    h+=row(lbl,s.cl[k],l.cl[k],cons,{elim:(k==='payables')});
+  });
+  h+=row('مجموع المتداولة', clTotal(s), clTotal(l), c.cl,{cls:'sub'});
+  h+=`<tr class="sub"><td colspan="4">الخصوم غير المتداولة</td></tr>`;
+  nclRows.forEach(([k,lbl])=> h+=row(lbl,s.ncl[k],l.ncl[k],s.ncl[k]+l.ncl[k]));
+  h+=row('مجموع غير المتداولة', nclTotal(s), nclTotal(l), c.ncl,{cls:'sub'});
+  h+=`<tr class="sub"><td colspan="4">حقوق الملكية</td></tr>`;
+  eqRows.forEach(([k,lbl])=> h+=row(lbl,s.eq[k],l.eq[k],s.eq[k]+l.eq[k]));
+  h+=row('مجموع حقوق الملكية', eqTotal(s), eqTotal(l), c.eq,{cls:'sub'});
+  h+=row('إجمالي الخصوم وحقوق الملكية', clTotal(s)+nclTotal(s)+eqTotal(s), clTotal(l)+nclTotal(l)+eqTotal(l), c.liab+c.eq,{cls:'total'});
+  return h+'</tbody>';
+}
+function ratioTableHTML(s,l,c){
+  // قبل = مجموع منفصل (تقريبي بجمع الأصول/الخصوم دون استبعاد)
+  const sB={ca:caTotal(D.swaj)+caTotal(D.laroche), cl:clTotal(D.swaj)+clTotal(D.laroche),
+            inventory:D.swaj.ca.inventory+D.laroche.ca.inventory, assets:caTotal(D.swaj)+faTotal(D.swaj)+caTotal(D.laroche)+faTotal(D.laroche),
+            liab:clTotal(D.swaj)+nclTotal(D.swaj)+clTotal(D.laroche)+nclTotal(D.laroche), eq:eqTotal(D.swaj)+eqTotal(D.laroche)};
+  const isB={revenue:s.revenue+l.revenue, cogs:s.cogs+l.cogs, gross:s.gross+l.gross, net:s.net+l.net};
+  const before = ratios(null,isB,sB);
+  // بعد = الموحّد + أثر التآزر
+  const netAfter = c.net + D.syn.overhead*(1-D.zakatRate/100) + D.syn.revenueSyn*0.5;
+  const invAfter = c.inv;
+  const caAfter = c.ca - D.syn.wcRelease;
+  const isA={revenue:c.revenue+D.syn.revenueSyn, cogs:c.cogs, gross:c.gross, net:netAfter};
+  const bsA={ca:caAfter, cl:c.cl, inventory:invAfter, assets:c.assets-D.syn.wcRelease, liab:c.liab, eq:c.eq+netAfter*0.3};
+  const after = ratios(null,isA,bsA);
+  const r=(lbl,b,a,better,unit='')=>{
+    const up = better==='up'? a>=b : a<=b;
+    return `<tr><td>${lbl}</td><td class="n"><span class="num">${unit==='x'?fmt1(b)+'×':unit==='%'?pct(b):fmt(b)}</span></td>
+      <td class="n"><span class="num">${unit==='x'?fmt1(a)+'×':unit==='%'?pct(a):fmt(a)}</span></td>
+      <td><span class="pill ${up?'pos':'neg'}">${up?'▲ تحسّن':'▼ تراجع'}</span></td></tr>`;
+  };
+  return `<thead><tr><th>المؤشر</th><th class="n">قبل الدمج</th><th class="n">بعد الدمج</th><th>الأثر</th></tr></thead><tbody>
+    ${r('هامش مجمل الربح',before.gm,after.gm,'up','%')}
+    ${r('هامش صافي الربح',before.nm,after.nm,'up','%')}
+    ${r('معدل دوران المخزون',before.turn,after.turn,'up','x')}
+    ${r('متوسط فترة بقاء المخزون (يوم)',before.days,after.days,'down')}
+    ${r('نسبة السيولة (التداول)',before.cr,after.cr,'up','x')}
+    ${r('النسبة السريعة',before.quick,after.quick,'up','x')}
+    ${r('العائد على الأصول ROA',before.roa,after.roa,'up','%')}
+    ${r('العائد على حقوق الملكية ROE',before.roe,after.roe,'up','%')}
+    ${r('نسبة الدين إلى حقوق الملكية',before.de,after.de,'down','x')}
+    ${r('رأس المال العامل',before.wc,after.wc,'up')}
+  </tbody>`;
+}
+
+/* ---------- الرسوم ---------- */
+const PAL={ink:'#14213D',brass:'#B08D43',brassSoft:'#C9A24B',pos:'#1F7A5A',muted:'#8A93A5',line:'#E4DFD4'};
+Chart.defaults.font.family="'IBM Plex Sans Arabic',sans-serif";
+Chart.defaults.color='#5B6472';
+
+function renderFinCharts(){
+  const s=incomeStatement(D.swaj), l=incomeStatement(D.laroche), c=consolidated();
+  mkChart('chFin','bar',{
+    labels:['الإيرادات','مجمل الربح','الربح التشغيلي','صافي الربح'],
+    datasets:[
+      {label:'سواج',data:[s.revenue,s.gross,s.ebit,s.net],backgroundColor:PAL.brassSoft},
+      {label:'الأروش',data:[l.revenue,l.gross,l.ebit,l.net],backgroundColor:PAL.ink},
+      {label:'الموحّد',data:[c.revenue,c.gross,c.ebit,c.net],backgroundColor:PAL.pos},
+    ]
+  },{plugins:{legend:{position:'bottom'}},scales:{y:{ticks:{callback:v=>(v/1e6)+'م'}}}});
+
+  mkChart('chAssets','doughnut',{
+    labels:['نقد','ذمم مدينة','مخزون','مدفوع مقدمًا/أخرى','أصول ثابتة'],
+    datasets:[{data:[c.cash,c.recv,c.inv,c.ca-c.cash-c.recv-c.inv,c.fa],
+      backgroundColor:[PAL.ink,PAL.brass,PAL.brassSoft,PAL.muted,PAL.pos],borderWidth:2,borderColor:'#fff'}]
+  },{plugins:{legend:{position:'right'}},cutout:'58%'});
+}
+function renderMarketChart(){
+  mkChart('chMarket','bar',{
+    labels:['القرب من العميل','كفاءة التوريد','التحكّم في السلسلة','مرونة التسعير','الحضور الرقمي'],
+    datasets:[
+      {label:'قبل الدمج',data:[60,55,40,45,25],backgroundColor:PAL.muted},
+      {label:'بعد الدمج',data:[80,82,90,75,60],backgroundColor:PAL.brass},
+    ]
+  },{indexAxis:'y',plugins:{legend:{position:'bottom'}},scales:{x:{max:100}}});
+}
+function mkChart(id,type,data,opts){
+  const el=document.getElementById(id); if(!el)return;
+  if(charts[id]) charts[id].destroy();
+  charts[id]=new Chart(el,{type,data,options:Object.assign({responsive:true,maintainAspectRatio:false},opts)});
+}
+
+/* ---------- لوحة القرار ---------- */
+function weightedScore(){
+  let t=0,w=0;
+  for(const k in D.scores){t+=D.scores[k]*D.weights[k]; w+=D.weights[k];}
+  return t/w;
+}
+function verdict(score){
+  if(score<=0) return {t:'بانتظار إدخال البيانات والتقييم',c:'#8A93A5'};
+  if(score>=80) return {t:'يُوصى بقوة بالمضي في الدمج',c:PAL.pos};
+  if(score>=65) return {t:'يُوصى بالدمج مع معالجة المخاطر',c:PAL.pos};
+  if(score>=50) return {t:'مشروط — إعادة هيكلة قبل الدمج',c:PAL.brass};
+  return {t:'لا يُوصى بالدمج حاليًا',c:'#B23A48'};
+}
+function renderDash(){
+  const c=consolidated();
+  const score=weightedScore();
+  const v=verdict(score);
+  document.getElementById('dashKpis').innerHTML =
+    `<div class="kpi accent"><div class="label">مؤشر القرار الموزون</div><div class="value"><span class="num">${score.toFixed(0)}</span><small>/100</small></div><div style="color:#C9A24B;font-size:12.5px;margin-top:6px;font-weight:600">${v.t}</div></div>`+
+    kpiTile('إيراد موحّد متوقّع','بعد التآزر',`<span class="num">${fmt(c.revenue+D.syn.revenueSyn)}</span>`,'up','ر.س')+
+    kpiTile('تآزر سنوي متكرر','مصروفات+إيراد',`<span class="num">${fmt(D.syn.overhead+D.syn.revenueSyn)}</span>`,'up','ر.س')+
+    kpiTile('نقد محرّر','رأس مال عامل',`<span class="num">${fmt(D.syn.wcRelease)}</span>`,'up','لمرة واحدة');
+
+  // العداد SVG
+  document.getElementById('gauge').innerHTML = gaugeSVG(score,v.c);
+  document.getElementById('gScore').innerHTML = `<span class="num">${score.toFixed(0)}</span><small>/100</small>`;
+  const gv=document.getElementById('gVerdict'); gv.textContent=v.t; gv.style.color=v.c;
+
+  // رادار
+  mkChart('chRadar','radar',{
+    labels:['مالية','سوق','استراتيجية','قانونية','موارد بشرية','تكامل'],
+    datasets:[{label:'درجة الدراسة',data:[D.scores.financial,D.scores.market,D.scores.strategic,D.scores.legal,D.scores.hr,D.scores.integration],
+      backgroundColor:'rgba(176,141,67,.18)',borderColor:PAL.brass,borderWidth:2,pointBackgroundColor:PAL.ink}]
+  },{plugins:{legend:{display:false}},scales:{r:{min:0,max:100,ticks:{stepSize:20,backdropColor:'transparent'},pointLabels:{font:{size:13}}}}});
+
+  // الملخص التنفيذي
+  const r = ratios(null,{revenue:c.revenue,cogs:c.cogs,gross:c.gross,net:c.net},{ca:c.ca,fa:c.fa,assets:c.assets,cl:c.cl,liab:c.liab,eq:c.eq,inventory:c.inv});
+  document.getElementById('execSummary').innerHTML = `
+    <p>يُنتِج دمج <b>سواج التجارية</b> و<b>الأروش التجارية</b> كيانًا بإيراد موحّد قدره <b class="num">${fmt(c.revenue)}</b> ر.س وصافي ربح <b class="num">${fmt(c.net)}</b> ر.س بعد استبعاد المبيعات البينية البالغة <b class="num">${fmt(D.inter.sales)}</b> ر.س والربح غير المحقّق في المخزون البالغ <b class="num">${fmt(unrealizedProfit())}</b> ر.س وفق معايير IFRS.</p>
+    <p>يحقّق الدمج تآزرًا سنويًا متكرّرًا يقارب <b class="num">${fmt(D.syn.overhead+D.syn.revenueSyn)}</b> ر.س ويحرّر نحو <b class="num">${fmt(D.syn.wcRelease)}</b> ر.س من رأس المال العامل عبر توحيد سلسلة الإمداد وتسريع دوران المخزون. هامش مجمل الربح الموحّد ${pct(r.gm)} ونسبة السيولة ${fmt1(r.cr)}×.</p>
+    <p style="background:#FBF8F0;border-inline-start:3px solid ${v.c};padding:12px 16px;border-radius:0 10px 10px 0"><b>التوصية النهائية:</b> بدرجة قرار موزونة <b class="num">${score.toFixed(0)}/100</b> — <b style="color:${v.c}">${v.t}</b>. أبرز شروط النجاح: إنجاز توحيد الأنظمة (ERP)، تسوية الأرصدة البينية بتدقيق مستقل قبل الإغلاق، وتنفيذ خطة الأيام المئة مع مساءلة شهرية عن تحقّق التآزر.</p>
+    <div id="notesOut"></div>`;
+  const n=document.getElementById('mgmtNotes');
+  if(n && n.value.trim()) document.getElementById('notesOut').innerHTML=`<p style="margin-top:14px"><b>ملاحظات الإدارة:</b> ${n.value.replace(/</g,'&lt;')}</p>`;
+}
+function gaugeSVG(score,color){
+  const a=Math.PI*(1-score/100);
+  const cx=130,cy=130,R=104;
+  const nx=cx+R*Math.cos(a), ny=cy-R*Math.sin(a);
+  const arc=(from,to,col)=>{
+    const a1=Math.PI*(1-from/100), a2=Math.PI*(1-to/100);
+    const x1=cx+R*Math.cos(a1),y1=cy-R*Math.sin(a1),x2=cx+R*Math.cos(a2),y2=cy-R*Math.sin(a2);
+    return `<path d="M ${x1} ${y1} A ${R} ${R} 0 0 1 ${x2} ${y2}" stroke="${col}" stroke-width="16" fill="none" stroke-linecap="round"/>`;
+  };
+  return `<svg width="260" height="150" viewBox="0 0 260 150">
+    ${arc(0,50,'#E4DFD4')}${arc(50,65,'#E9D9B0')}${arc(65,100,'#CBE3D7')}
+    ${arc(0,score,color)}
+    <circle cx="${cx}" cy="${cy}" r="7" fill="${PAL.ink}"/>
+    <line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="${PAL.ink}" stroke-width="3.5" stroke-linecap="round"/>
+    <text x="26" y="146" font-size="11" fill="#8A93A5">لا يُوصى</text>
+    <text x="200" y="146" font-size="11" fill="#8A93A5">يُوصى</text>
+  </svg>`;
+}
+
+/* ---------- حفظ/استيراد ---------- */
+function exportData(){
+  const blob=new Blob([JSON.stringify(D,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='دراسة_دمج_سواج_الأروش.json';a.click();
+}
+function importData(e){
+  const f=e.target.files[0]; if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{try{
+    const obj=JSON.parse(rd.result); Object.assign(D,obj); seedAdmin(); saveDB();
+    if(session) runApp(); alert('تم استيراد البيانات بنجاح');
+  }catch(err){alert('ملف غير صالح')}};
+  rd.readAsText(f);
+}
+
+/* ---------- استيراد من Excel عبر قالب ثابت ---------- */
+// مصدر واحد للحقول: [الرمز, البند, القسم]
+const FIELDS=[
+  ['revenue','الإيرادات','قائمة الدخل'],
+  ['cogs','تكلفة المبيعات','قائمة الدخل'],
+  ['op.salaries','رواتب وأجور','المصروفات التشغيلية'],
+  ['op.rent','إيجارات','المصروفات التشغيلية'],
+  ['op.marketing','تسويق ودعاية','المصروفات التشغيلية'],
+  ['op.admin','مصروفات إدارية وعمومية','المصروفات التشغيلية'],
+  ['op.depreciation','إهلاك واستهلاك','المصروفات التشغيلية'],
+  ['op.other','مصروفات تشغيلية أخرى','المصروفات التشغيلية'],
+  ['finance','مصروفات تمويلية','قائمة الدخل'],
+  ['ca.cash','النقد وما في حكمه','الأصول المتداولة'],
+  ['ca.receivables','ذمم مدينة (عملاء)','الأصول المتداولة'],
+  ['ca.inventory','المخزون','الأصول المتداولة'],
+  ['ca.prepaid','مصروفات مدفوعة مقدمًا','الأصول المتداولة'],
+  ['ca.other','أصول متداولة أخرى','الأصول المتداولة'],
+  ['fa.property','عقارات وممتلكات','الأصول الثابتة'],
+  ['fa.fixtures','أثاث وتجهيزات وديكورات','الأصول الثابتة'],
+  ['fa.vehicles','سيارات ومعدات','الأصول الثابتة'],
+  ['fa.intangibles','أصول غير ملموسة (شهرة/برمجيات)','الأصول الثابتة'],
+  ['fa.other','أصول ثابتة أخرى','الأصول الثابتة'],
+  ['cl.payables','ذمم دائنة (موردون)','الخصوم المتداولة'],
+  ['cl.stloans','قروض قصيرة الأجل','الخصوم المتداولة'],
+  ['cl.accruals','مصروفات مستحقة','الخصوم المتداولة'],
+  ['cl.zakat','مخصص الزكاة','الخصوم المتداولة'],
+  ['cl.other','خصوم متداولة أخرى','الخصوم المتداولة'],
+  ['ncl.ltloans','قروض طويلة الأجل','الخصوم غير المتداولة'],
+  ['ncl.eosb','مكافأة نهاية الخدمة','الخصوم غير المتداولة'],
+  ['eq.capital','رأس المال','حقوق الملكية'],
+  ['eq.reserves','الاحتياطيات','حقوق الملكية'],
+  ['eq.retained','الأرباح المبقاة','حقوق الملكية'],
+];
+const INTER_FIELDS=[
+  ['inter.sales','مبيعات سواج البينية للأروش (ر.س)'],
+  ['inter.margin','هامش سواج على المبيعات البينية (%)'],
+  ['inter.invRetained','نسبة البضاعة البينية في مخزون الأروش آخر المدة (%)'],
+  ['inter.balance','الرصيد البيني — ذمم سواج على الأروش (ر.س)'],
+];
+function num(v){ if(v==null)return 0; const x=parseFloat((''+v).replace(/[^\d.\-]/g,'')); return isFinite(x)?x:0; }
+
+function downloadTemplate(){
+  const rows=[['الرمز (لا تعدّله)','البند','القسم','سواج','الأروش']];
+  FIELDS.forEach(([c,l,s])=> rows.push([c,l,s,'','']));
+  rows.push([]);
+  rows.push(['الرمز (لا تعدّله)','المعاملات البينية','','القيمة','']);
+  INTER_FIELDS.forEach(([c,l])=> rows.push([c,l,'','','']));
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:18},{wch:38},{wch:22},{wch:16},{wch:16}];
+  if(!ws['!props'])ws['!props']={};
+  const wb=XLSX.utils.book_new();
+  wb.Workbook={Views:[{RTL:true}]};
+  XLSX.utils.book_append_sheet(wb,ws,'بيانات الشركتين');
+  XLSX.writeFile(wb,'قالب_بيانات_سواج_الأروش.xlsx');
+}
+
+function importExcel(e){
+  const f=e.target.files[0]; if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const wb=XLSX.read(rd.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1});
+      let n=0;
+      rows.forEach(r=>{
+        const code=(r[0]==null?'':''+r[0]).trim();
+        if(!code || code.indexOf('الرمز')===0) return;
+        if(code.indexOf('inter.')===0){
+          const k=code.split('.')[1];
+          if(k in D.inter){ D.inter[k]=num(r[3]); n++; }
+          return;
+        }
+        const vS=num(r[3]), vL=num(r[4]);
+        if(['revenue','cogs','finance'].indexOf(code)>=0){ D.swaj[code]=vS; D.laroche[code]=vL; n++; return; }
+        const p=code.split('.');
+        if(p.length===2 && D.swaj[p[0]] && (p[1] in D.swaj[p[0]])){
+          D.swaj[p[0]][p[1]]=vS; D.laroche[p[0]][p[1]]=vL; n++;
+        }
+      });
+      saveDB();
+      if(session) runApp();
+      alert('تم استيراد '+n+' بندًا من ملف Excel بنجاح');
+    }catch(err){ alert('تعذّر قراءة الملف — تأكد أنه قالب النظام بصيغة xlsx'); }
+    e.target.value='';
+  };
+  rd.readAsArrayBuffer(f);
+}
+
+/* ============================================================
+   نظام المستخدمين والصلاحيات
+   ============================================================ */
+const SECTIONS=[['overview','نظرة عامة'],['financial','المالية والمحاسبية'],['market','السوق والعملاء'],['strategic','الاستراتيجية'],['legal','القانونية'],['hr','الموارد البشرية'],['integration','التكامل والتآزر'],['dashboard','لوحة القرار']];
+const ACCESS=[['none','لا شيء'],['view','عرض فقط'],['edit','عرض وتعديل']];
+const ROLE_TEMPLATES={
+  admin:{label:'مدير النظام (كل الصلاحيات + إدارة المستخدمين)', admin:true, all:'edit'},
+  analyst:{label:'محلل — عرض وتعديل كل الأقسام', admin:false, all:'edit'},
+  viewer:{label:'مشاهد — عرض كل الأقسام', admin:false, all:'view'},
+  financial:{label:'المالية فقط — تعديل قسم المالية', admin:false, all:'none', only:'financial'},
+  hr:{label:'الموارد فقط — تعديل قسم الموارد', admin:false, all:'none', only:'hr'},
+  custom:{label:'مخصّص — أحدّد كل قسم يدويًا', admin:false, all:'none'},
+};
+function tmplAcc(t){
+  const T=ROLE_TEMPLATES[t]||ROLE_TEMPLATES.custom;
+  const o=blankAcc(T.all);
+  if(T.only) o[T.only]='edit';
+  if(!T.admin){ if(o.overview==='none')o.overview='view'; if(o.dashboard==='none')o.dashboard='view'; }
+  return o;
+}
+function normalizeUsers(){
+  (D.users||[]).forEach(x=>{
+    if(x.admin===undefined){
+      const role=x.role||'viewer';
+      if(role==='admin'){ x.admin=true; x.acc=blankAcc('edit'); }
+      else if(role==='analyst'){ x.admin=false; x.acc=blankAcc('edit'); }
+      else if(role==='entry'){ x.admin=false; x.acc=blankAcc('view'); x.acc.financial='edit'; }
+      else { x.admin=false; x.acc=blankAcc('view'); }
+    }
+    if(!x.acc) x.acc=blankAcc(x.admin?'edit':'none');
+    SECTIONS.forEach(([k])=>{ if(!x.acc[k]) x.acc[k]='none'; });
+  });
+}
+const SKEY='mergerDB_v3';
+let session=null;
+
+function saveDB(){ try{localStorage.setItem(SKEY,JSON.stringify(D));}catch(e){} }
+function loadDB(){ try{const r=localStorage.getItem(SKEY); if(r) Object.assign(D,JSON.parse(r));}catch(e){} }
+function seedAdmin(){
+  if(!Array.isArray(D.users)||!D.users.length){
+    D.users=[{u:'admin',p:'admin123',name:'مدير النظام',admin:true,acc:blankAcc('edit'),last:null}];
+    saveDB();
+  }
+}
+function val(id){return (document.getElementById(id).value||'').trim();}
+
+function doLogin(){
+  const u=val('loginUser'), p=val('loginPass');
+  const usr=(D.users||[]).find(x=>x.u===u && x.p===p);
+  if(!usr){ document.getElementById('loginErr').style.display='block'; return; }
+  usr.last=new Date().toLocaleString('en-GB'); saveDB();
+  session=usr;
+  document.getElementById('loginOverlay').style.display='none';
+  ['.topbar','.tabs','#main'].forEach(s=>{const el=document.querySelector(s); if(el)el.style.display='';});
+  runApp();
+}
+function logout(){
+  session=null;
+  ['.topbar','.tabs','#main'].forEach(s=>{const el=document.querySelector(s); if(el)el.style.display='none';});
+  document.getElementById('loginPass').value='';
+  document.getElementById('loginErr').style.display='none';
+  document.getElementById('loginOverlay').style.display='grid';
+}
+
+function runApp(){
+  ensureCards();
+  ensureExtras();
+  buildTabs();
+  buildSections();
+  // استعادة ملاحظات الإدارة
+  const n=document.getElementById('mgmtNotes');
+  if(n){ n.value=D.notes||''; n.addEventListener('input',()=>{D.notes=n.value;renderDash();saveDB();}); }
+  // استعادة حقول التحليل لكل قسم
+  document.querySelectorAll('.secnote').forEach(t=>{
+    const sec=t.id.replace('note-','');
+    t.value=(D.secNotes&&D.secNotes[sec])||'';
+    t.addEventListener('input',()=>{ if(!D.secNotes)D.secNotes={}; D.secNotes[sec]=t.value; saveDB(); });
+  });
+  // عرض بطاقات القياس التفاعلية
+  ['market','strategic','legal','hr','integration'].forEach(renderScorecard);
+  // محرّرا الأهداف وSWOT
+  renderGoals(); renderSwot();
+  // محرّرات القانوني والموارد البشرية
+  renderItemList('legalApprovals','legal'); renderItemList('legalDD','legal');
+  renderItemList('hrCulture','hr'); renderItemList('hrRetention','hr');
+  renderHrForce();
+  // شريحة المستخدم
+  document.getElementById('userChip').innerHTML=
+    `<div class="av">${(session.name||session.u)[0]}</div><div><b>${session.name||session.u}</b><br><span>${isAdmin()?'مدير النظام':'صلاحيات مخصّصة'}</span></div>`;
+  applyPermissions();
+}
+
+function applyPermissions(){
+  // إظهار/إخفاء التبويبات حسب صلاحية العرض لكل قسم
+  document.querySelectorAll('.tab').forEach(t=>{ t.style.display = canView(t.dataset.tab)? '' : 'none'; });
+  const first=[...document.querySelectorAll('.tab')].find(t=>t.style.display!=='none');
+  if(first) switchTab(first.dataset.tab);
+  // المدخلات المالية
+  const finOK=canEditSec('financial');
+  document.querySelectorAll('.fin-in').forEach(i=> i.disabled=!finOK);
+  // حقول التحليل لكل قسم
+  document.querySelectorAll('.secnote').forEach(t=> t.disabled=!canEditSec(t.id.replace('note-','')));
+  // بطاقات القياس والمحرّرات التفاعلية
+  ['market','strategic','legal','hr','integration'].forEach(applyScPerms);
+  applyStratPerms();
+  ['legalApprovals','legalDD'].forEach(k=>applyListPerms(k,'legal'));
+  ['hrCulture','hrRetention'].forEach(k=>applyListPerms(k,'hr'));
+  applyHrForcePerms();
+  // ملاحظات الإدارة في لوحة القرار
+  const notes=document.getElementById('mgmtNotes'); if(notes) notes.disabled=!canEditSec('dashboard');
+  // أزرار الإدارة
+  document.getElementById('btnUsers').style.display = isAdmin()? '' : 'none';
+  document.getElementById('btnImport').style.display = isAdmin()? '' : 'none';
+  document.getElementById('btnExcel').style.display = finOK? '' : 'none';
+}
+
+/* ---------- إدارة المستخدمين والصلاحيات لكل قسم ---------- */
+let editIdx=null;
+function openUsers(){ if(!isAdmin()) return; editIdx=null; renderUsers(); document.getElementById('userModal').style.display='grid'; }
+function closeUsers(){ document.getElementById('userModal').style.display='none'; }
+function accSummary(x){
+  if(x.admin) return 'كل الأقسام (تعديل) + إدارة المستخدمين';
+  const e=SECTIONS.filter(([k])=>x.acc&&x.acc[k]==='edit').length;
+  const v=SECTIONS.filter(([k])=>x.acc&&x.acc[k]==='view').length;
+  return `تعديل: ${e} قسم · عرض: ${v} قسم`;
+}
+function renderUsers(){
+  let h=`<thead><tr><th>الاسم</th><th>المستخدم</th><th>الصلاحيات</th><th></th><th></th></tr></thead><tbody>`;
+  (D.users||[]).forEach((x,i)=>{
+    h+=`<tr><td>${x.name||'—'}</td><td style="direction:ltr;text-align:right">${x.u}</td>
+      <td style="font-size:12.5px"><span class="role-tag ${x.admin?'admin':''}">${x.admin?'مدير':'مخصّص'}</span> <span style="color:var(--muted)">${accSummary(x)}</span></td>
+      <td><button class="tbtn" onclick="toggleEdit(${i})">${editIdx===i?'إغلاق':'صلاحيات'}</button></td>
+      <td><button class="tbtn del" onclick="delUser(${i})" ${x.u===session.u?'disabled':''}>حذف</button></td></tr>`;
+    if(editIdx===i){
+      h+=`<tr><td colspan="5" style="background:#FAF8F3"><div class="acc-editor">
+        <label class="acc-admin"><input type="checkbox" ${x.admin?'checked':''} onchange="setAdmin(${i},this.checked)"> مدير نظام — كل الصلاحيات وإدارة المستخدمين</label>
+        <div class="acc-grid" style="${x.admin?'opacity:.45;pointer-events:none':''}">
+          ${SECTIONS.map(([k,lbl])=>`<div class="acc-row"><span>${lbl}</span>
+            <select onchange="setAcc(${i},'${k}',this.value)">
+              ${ACCESS.map(([v,al])=>`<option value="${v}" ${((x.acc&&x.acc[k])||'none')===v?'selected':''}>${al}</option>`).join('')}
+            </select></div>`).join('')}
+        </div></div></td></tr>`;
+    }
+  });
+  document.getElementById('usersTable').innerHTML=h+'</tbody>';
+}
+function toggleEdit(i){ editIdx = (editIdx===i? null : i); renderUsers(); }
+function setAdmin(i,checked){
+  D.users[i].admin=checked;
+  if(checked) D.users[i].acc=blankAcc('edit');
+  saveDB(); renderUsers();
+  if(session && D.users[i].u===session.u){ session=D.users[i]; runApp(); openUsers(); editIdx=i; renderUsers(); }
+}
+function setAcc(i,sec,level){
+  if(!D.users[i].acc) D.users[i].acc=blankAcc('none');
+  D.users[i].acc[sec]=level; saveDB(); renderUsers();
+  if(session && D.users[i].u===session.u){ session=D.users[i]; applyPermissions(); }
+}
+function addUser(){
+  const name=val('nuName'), u=val('nuUser'), p=val('nuPass'), tmpl=val('nuRole');
+  if(!u||!p){ alert('أدخل اسم المستخدم وكلمة المرور'); return; }
+  if((D.users||[]).some(x=>x.u===u)){ alert('اسم المستخدم موجود مسبقًا'); return; }
+  const T=ROLE_TEMPLATES[tmpl]||ROLE_TEMPLATES.custom;
+  D.users.push({u,p,name:name||u,admin:!!T.admin,acc:tmplAcc(tmpl),last:null});
+  saveDB();
+  ['nuName','nuUser','nuPass'].forEach(id=>document.getElementById(id).value='');
+  editIdx=D.users.length-1; renderUsers();
+}
+function delUser(i){
+  const x=D.users[i];
+  if(x.u===session.u) return;
+  if(x.admin && D.users.filter(z=>z.admin).length<=1){ alert('لا يمكن حذف آخر مدير نظام'); return; }
+  if(!confirm('حذف المستخدم "'+(x.name||x.u)+'"؟')) return;
+  D.users.splice(i,1); if(editIdx===i)editIdx=null; saveDB(); renderUsers();
+}
+
+/* ============================================================
+   التشغيل والتهيئة
+   ============================================================ */
+loadDB();
+seedAdmin();
+normalizeUsers();
+saveDB();
+// إخفاء التطبيق حتى تسجيل الدخول
+['.topbar','.tabs','#main'].forEach(s=>{const el=document.querySelector(s); if(el)el.style.display='none';});
+// تلميح بيانات الدخول الافتراضية (يظهر فقط عند وجود حساب admin الافتراضي)
+(function(){
+  const def=(D.users||[]).find(x=>x.u==='admin'&&x.p==='admin123');
+  document.getElementById('loginHint').innerHTML = def
+    ? 'الدخول الأول — المستخدم: <b>admin</b> · كلمة المرور: <b>admin123</b><br>أنشئ مستخدمين جددًا من «المستخدمون» بعد الدخول'
+    : 'أدخل بيانات الحساب الذي أنشأه مدير النظام';
+})();
+</script>
+</body>
+</html>
