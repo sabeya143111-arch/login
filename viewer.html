@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>عارض البيانات — دراسة دمج سواج والأروش</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root{
+  --ink:#14213D; --ink-2:#1E2F52; --brass:#B08D43; --brass-soft:#C9A24B;
+  --surface:#F6F4EF; --card:#FFFFFF; --line:#E4DFD4; --muted:#5B6472;
+  --pos:#1F7A5A; --pos-soft:#E3F1EB; --neg:#B23A48; --neg-soft:#F6E5E7; --warn:#C8861A;
+  --shadow:0 1px 2px rgba(20,33,61,.06),0 8px 28px rgba(20,33,61,.08);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:"IBM Plex Sans Arabic",system-ui,"Segoe UI","Tahoma",sans-serif;background:var(--surface);color:var(--ink);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:"Reem Kufi","IBM Plex Sans Arabic",sans-serif;font-weight:600;margin:0;line-height:1.35}
+.num{font-feature-settings:"tnum";font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:plaintext;display:inline-block}
+
+.topbar{background:var(--ink);color:#fff;position:sticky;top:0;z-index:40;border-bottom:3px solid var(--brass)}
+.topbar-inner{max-width:1240px;margin:0 auto;padding:14px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:13px}
+.crest{width:42px;height:42px;border:1.5px solid var(--brass);border-radius:9px;display:grid;place-items:center;color:var(--brass-soft);font-family:"Reem Kufi";font-weight:700;font-size:20px;flex-shrink:0}
+.brand h1{font-size:18px;color:#fff;letter-spacing:.2px}
+.brand .sub{font-size:11.5px;color:#A9B4C9;font-weight:400}
+.topbar-actions{margin-inline-start:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#fff;padding:8px 14px;border-radius:8px;transition:.15s;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:rgba(255,255,255,.14)}
+.btn-brass{background:var(--brass);border-color:var(--brass);color:#15233f;font-weight:600}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:#A9B4C9;border:1px solid rgba(255,255,255,.18);padding:6px 10px;border-radius:999px}
+.sw{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:#A9B4C9;cursor:pointer}
+.sw input{accent-color:var(--brass)}
+
+main{max-width:1240px;margin:0 auto;padding:26px 22px 80px}
+.sec-head{margin:30px 0 16px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.sec-head:first-child{margin-top:6px}
+.eyebrow{font-size:12px;letter-spacing:2px;color:var(--brass);font-weight:600;text-transform:uppercase}
+.sec-head h2{font-size:22px;margin-top:5px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:var(--shadow);margin-bottom:18px}
+.card-title{font-size:16px;display:flex;align-items:center;gap:9px;margin-bottom:14px}
+.card-title .dot{width:9px;height:9px;border-radius:50%;background:var(--brass)}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:920px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:18px;box-shadow:var(--shadow)}
+.kpi .label{font-size:12.5px;color:var(--muted);font-weight:500}
+.kpi .value{font-size:25px;font-weight:700;font-family:"Reem Kufi";margin-top:7px;color:var(--ink)}
+.kpi .value small{font-size:13px;color:var(--muted);font-weight:400;font-family:"IBM Plex Sans Arabic"}
+.kpi.accent{background:linear-gradient(160deg,var(--ink),var(--ink-2));border-color:var(--ink)}
+.kpi.accent .label{color:#A9B4C9}.kpi.accent .value{color:#fff}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{padding:9px 11px;text-align:right;border-bottom:1px solid var(--line)}
+thead th{background:#FAF8F3;font-weight:600;color:var(--ink);font-size:12.5px;border-bottom:1.5px solid var(--brass)}
+tbody tr:hover{background:#FBFAF6}
+td.n,th.n{text-align:left;direction:ltr;font-feature-settings:"tnum";font-variant-numeric:tabular-nums}
+tr.total td{font-weight:700;background:#F4F1E9;border-top:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink)}
+tr.sub td{font-weight:600;background:#FAF8F3}
+
+.badge{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:999px}
+.badge.go{background:var(--pos-soft);color:var(--pos)}
+.badge.warn{background:#FBF0DC;color:var(--warn)}
+.badge.no{background:var(--neg-soft);color:var(--neg)}
+.bar{height:8px;border-radius:999px;background:#EDE8DC;overflow:hidden;min-width:90px}
+.bar > i{display:block;height:100%;background:var(--brass)}
+
+.swot{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.swot{grid-template-columns:1fr}}
+.swot-box{border:1px solid var(--line);border-radius:12px;padding:14px}
+.swot-box h4{font-size:14px;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+.swot-box.s{background:#F1F7F4}.swot-box.w{background:#FBF1F2}
+.swot-box.o{background:#F1F5FB}.swot-box.t{background:#FBF6EC}
+.swot-box ul{margin:0;padding-inline-start:18px}.swot-box li{margin:4px 0;font-size:13px}
+
+.ilist .it{padding:9px 0;border-bottom:1px dashed var(--line)}
+.ilist .it:last-child{border-bottom:none}
+.ilist .it b{font-size:13.5px}.ilist .it span{display:block;color:var(--muted);font-size:12.5px}
+
+.note{background:#FAF8F3;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:13.5px;white-space:pre-wrap;color:var(--ink-2)}
+.note.empty{color:var(--muted);font-style:italic}
+
+.raw{font-family:ui-monospace,"Cascadia Code",monospace;font-size:12px;direction:ltr;text-align:left;background:#0F1830;color:#CFE0FF;border-radius:12px;padding:16px;max-height:420px;overflow:auto;white-space:pre}
+details summary{cursor:pointer;font-weight:600;color:var(--ink)}
+
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+.spinner{width:34px;height:34px;border:3px solid var(--line);border-top-color:var(--brass);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.muted{color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="crest">سـ</div>
+      <div>
+        <h1>عارض بيانات الدراسة</h1>
+        <div class="sub">دمج سواج التجارية والأروش التجارية — للعرض فقط</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <span class="chip" id="updChip">آخر تحديث: —</span>
+      <label class="sw"><input type="checkbox" id="autoChk" checked> تحديث تلقائي</label>
+      <button class="btn btn-brass" onclick="loadAll()">🔄 تحديث الآن</button>
+    </div>
+  </div>
+</div>
+
+<main id="main">
+  <div class="empty-state" id="boot"><div class="spinner"></div>جارٍ تحميل البيانات من السحابة…</div>
+</main>
+
+<script>
+/* ===== نفس مشروع Supabase ===== */
+const SUPABASE_URL = 'https://gspfxdsuamqlynshgjii.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_DRUKXKJGZHskOqKP-OXvwQ_BlTLTTmm';
+const CLOUD_TABLE  = 'merger_study';
+const CLOUD_ROW_ID = 'main';
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ===== مساعدات ===== */
+const fmt  = n => isFinite(n)? Math.round(n).toLocaleString('en-US') : '—';
+const pct  = n => isFinite(n)? n.toLocaleString('en-US',{maximumFractionDigits:1})+'%' : '—';
+const esc  = s => String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sum  = o => Object.values(o||{}).reduce((a,b)=>a+(+b||0),0);
+
+const FIN_GROUPS = {
+  ca:['النقد وما في حكمه|cash','ذمم مدينة (عملاء)|receivables','المخزون|inventory','مصروفات مدفوعة مقدمًا|prepaid','أصول متداولة أخرى|other'],
+  fa:['عقارات وممتلكات|property','أثاث وتجهيزات|fixtures','سيارات ومعدات|vehicles','أصول غير ملموسة|intangibles','أصول ثابتة أخرى|other'],
+  cl:['ذمم دائنة (موردون)|payables','قروض قصيرة الأجل|stloans','مصروفات مستحقة|accruals','مخصص الزكاة|zakat','خصوم متداولة أخرى|other'],
+  ncl:['قروض طويلة الأجل|ltloans','مكافأة نهاية الخدمة|eosb'],
+  eq:['رأس المال|capital','الاحتياطيات|reserves','الأرباح المبقاة|retained'],
+  op:['رواتب وأجور|salaries','إيجارات|rent','تسويق ودعاية|marketing','مصروفات إدارية وعمومية|admin','إهلاك واستهلاك|depreciation','مصروفات تشغيلية أخرى|other'],
+};
+const SCORE_LABELS = {financial:'المالية والمحاسبية',market:'السوق والعملاء',strategic:'الاستراتيجية',legal:'القانونية',hr:'الموارد البشرية',integration:'التكامل والتآزر'};
+const LIST_LABELS  = {legalApprovals:'الموافقات والجهات التنظيمية',legalDD:'العناية الواجبة (Due Diligence)',hrCulture:'الثقافة وإدارة التغيير',hrRetention:'الاحتفاظ بالكفاءات'};
+
+function incomeStatement(c, zakatRate){
+  const revenue=+c.revenue||0, cogs=+c.cogs||0, finance=+c.finance||0;
+  const gross=revenue-cogs, opex=sum(c.op), ebit=gross-opex, pbt=ebit-finance;
+  const zakat=Math.max(0,pbt)*(zakatRate||2.5)/100, net=pbt-zakat;
+  return {revenue,cogs,gross,opex,ebit,finance,pbt,zakat,net};
+}
+
+/* ===== التحميل ===== */
+let firstLoad=true, timer=null;
+
+async function loadAll(){
+  try{
+    const {data,error}= await sb.from(CLOUD_TABLE).select('data,updated_at').eq('id',CLOUD_ROW_ID).maybeSingle();
+    if(error) throw error;
+    if(!data || !data.data){ renderEmpty('لا توجد بيانات بعد — افتح نظام الدراسة وأدخل أرقامك أولًا.'); return; }
+    render(data.data, data.updated_at);
+    firstLoad=false;
+  }catch(e){
+    console.error(e);
+    renderEmpty('تعذّر الاتصال بقاعدة البيانات. تحقّق من الإنترنت أو إعدادات Supabase.<br><span class="muted">'+esc(e.message||e)+'</span>');
+  }
+}
+function renderEmpty(msg){
+  document.getElementById('main').innerHTML = '<div class="empty-state">'+msg+'</div>';
+}
+
+function render(D, updatedAt){
+  const m=document.getElementById('main');
+  const z=D.zakatRate||2.5;
+  const s=D.swaj||{}, l=D.laroche||{};
+  const isS=incomeStatement(s,z), isL=incomeStatement(l,z);
+
+  // درجة مرجّحة
+  const sc=D.scores||{}, w=D.weights||{};
+  let totW=0, acc=0;
+  Object.keys(SCORE_LABELS).forEach(k=>{ const ww=+w[k]||0; totW+=ww; acc+=ww*(+sc[k]||0); });
+  const weighted = totW? acc/totW : 0;
+  const reco = weighted>=70? ['يُوصى بالمضي قُدُمًا','go'] : weighted>=50? ['يُمضى بشروط ومعالجات','warn'] : weighted>0? ['يلزم مراجعة جوهرية','no'] : ['بانتظار التقييم','warn'];
+
+  let html='';
+
+  /* ---- ملخص القرار ---- */
+  html+= sec('لوحة القرار','ملخص تنفيذي');
+  html+= '<div class="grid g4">'
+    + kpi('الدرجة المرجّحة', weighted.toFixed(1), '/ 100', true)
+    + kpi('التوصية', '<span class="badge '+reco[1]+'" style="font-size:14px">'+reco[0]+'</span>', '')
+    + kpi('إيراد مجمّع', fmt(isS.revenue+isL.revenue), 'ر.س')
+    + kpi('صافي ربح مجمّع', fmt(isS.net+isL.net), 'ر.س')
+  + '</div>';
+
+  /* ---- المالية ---- */
+  html+= sec('المالية والمحاسبية','قوائم الدخل والمركز المالي');
+  html+= '<div class="grid g2">'+ companyFin(s.name||'سواج التجارية', s, isS) + companyFin(l.name||'الأروش التجارية', l, isL) +'</div>';
+
+  // المعاملات البينية والتآزر
+  const it=D.inter||{}, sy=D.syn||{};
+  html+= '<div class="grid g2">';
+  html+= card('المعاملات البينية', tbl(['البند','القيمة'],[
+    ['مبيعات سواج للأروش', fmt(it.sales)],
+    ['هامش الربح %', pct(it.margin)],
+    ['نسبة المخزون المحتجز %', pct(it.invRetained)],
+    ['رصيد بيني (ذمم)', fmt(it.balance)],
+    ['ربح غير محقّق مُستبعَد', fmt((+it.sales||0)*((+it.margin||0)/100)*((+it.invRetained||0)/100))],
+  ]));
+  html+= card('التآزر المتوقّع بعد الدمج', tbl(['البند','القيمة (ر.س)'],[
+    ['توفير مصروفات عمومية', fmt(sy.overhead)],
+    ['تحرير رأس مال عامل', fmt(sy.wcRelease)],
+    ['تآزر إيرادي', fmt(sy.revenueSyn)],
+  ]));
+  html+= '</div>';
+
+  /* ---- الدرجات ---- */
+  html+= sec('تقييم الدراسات','الدرجات والأوزان');
+  let rows = Object.keys(SCORE_LABELS).map(k=>{
+    const v=+sc[k]||0, ww=+w[k]||0;
+    return `<tr><td>${SCORE_LABELS[k]}</td><td class="n">${v.toFixed(0)}</td><td class="n">${ww}%</td>
+      <td><div class="bar"><i style="width:${Math.max(0,Math.min(100,v))}%"></i></div></td></tr>`;
+  }).join('');
+  rows+= `<tr class="total"><td>الإجمالي المرجّح</td><td class="n">${weighted.toFixed(1)}</td><td class="n">${totW}%</td><td></td></tr>`;
+  html+= card('مصفوفة التقييم', `<table><thead><tr><th>الدراسة</th><th class="n">الدرجة</th><th class="n">الوزن</th><th>المؤشر</th></tr></thead><tbody>${rows}</tbody></table>`);
+
+  /* ---- الاستراتيجية ---- */
+  html+= sec('الاستراتيجية','الأهداف وتحليل SWOT');
+  const goals=(D.goals||[]);
+  html+= card('الأهداف الاستراتيجية', goals.length
+    ? tbl(['الهدف','مؤشر القياس','المستهدف','الأفق الزمني'], goals.map(g=>[esc(g.g),esc(g.k),esc(g.t),esc(g.h)]))
+    : '<div class="muted">لا توجد أهداف مُدخلة.</div>');
+  const sw=D.swot||{};
+  html+= card('تحليل SWOT',
+    '<div class="swot">'
+    + swotBox('s','نقاط القوة','#1F7A5A',sw.s)
+    + swotBox('w','نقاط الضعف','#B23A48',sw.w)
+    + swotBox('o','الفرص','#1E62B0',sw.o)
+    + swotBox('t','التهديدات','#C8861A',sw.t)
+    + '</div>');
+
+  /* ---- القانونية ---- */
+  html+= sec('القانونية','الموافقات والعناية الواجبة');
+  html+= '<div class="grid g2">'+ listCard(D.lists,'legalApprovals') + listCard(D.lists,'legalDD') +'</div>';
+
+  /* ---- الموارد البشرية ---- */
+  html+= sec('الموارد البشرية','القوى العاملة والثقافة');
+  const hf=(D.hrforce||[]);
+  html+= card('هيكل القوى العاملة', hf.length
+    ? tbl(['الإدارة','الوضع الحالي','بعد الدمج','الإجراء'], hf.map(r=>[esc(r.d),esc(r.c),esc(r.a),esc(r.x)]))
+    : '<div class="muted">لا توجد بيانات.</div>');
+  html+= '<div class="grid g2">'+ listCard(D.lists,'hrCulture') + listCard(D.lists,'hrRetention') +'</div>';
+
+  /* ---- الملاحظات ---- */
+  html+= sec('الملاحظات','ملاحظات الأقسام والإدارة');
+  const sn=D.secNotes||{};
+  const noteSecs=[['financial','المالية'],['market','السوق'],['strategic','الاستراتيجية'],['legal','القانونية'],['hr','الموارد البشرية'],['integration','التكامل']];
+  html+= card('ملاحظات الأقسام', noteSecs.map(([k,lab])=>{
+    const v=sn[k]||''; return `<div style="margin-bottom:10px"><b style="font-size:13px">${lab}:</b><div class="note ${v?'':'empty'}">${v?esc(v):'— لا توجد ملاحظة —'}</div></div>`;
+  }).join(''));
+  html+= card('ملاحظات الإدارة', `<div class="note ${D.notes?'':'empty'}">${D.notes?esc(D.notes):'— لا توجد ملاحظة —'}</div>`);
+
+  /* ---- المستخدمون ---- */
+  const users=(D.users||[]);
+  html+= sec('المستخدمون','حسابات الدخول (كلمات المرور مخفية)');
+  html+= card('قائمة المستخدمين', tbl(['الاسم','اسم الدخول','الصلاحية','آخر دخول'],
+    users.map(u=>[esc(u.name||u.u), esc(u.u), u.admin?'<span class="badge go">مدير نظام</span>':'مستخدم', esc(u.last||'—')])));
+
+  /* ---- JSON خام ---- */
+  html+= '<details style="margin-top:24px"><summary>عرض البيانات الخام (JSON)</summary><div class="raw" style="margin-top:10px">'+esc(JSON.stringify(D,null,2))+'</div></details>';
+
+  m.innerHTML=html;
+  document.getElementById('updChip').textContent = 'آخر تحديث: ' + (updatedAt? new Date(updatedAt).toLocaleString('en-GB') : '—');
+}
+
+/* ===== أجزاء العرض ===== */
+function sec(eyebrow,title){return `<div class="sec-head"><div class="eyebrow">${eyebrow}</div><h2>${title}</h2></div>`;}
+function kpi(label,val,unit,accent){return `<div class="kpi ${accent?'accent':''}"><div class="label">${label}</div><div class="value"><span class="num">${val}</span> ${unit?'<small>'+unit+'</small>':''}</div></div>`;}
+function card(title,inner){return `<div class="card"><div class="card-title"><span class="dot"></span>${title}</div>${inner}</div>`;}
+function tbl(head,rows){
+  const h=head.map((x,i)=>`<th class="${i>0?'n':''}">${x}</th>`).join('');
+  const b=rows.map(r=>'<tr>'+r.map((c,i)=>`<td class="${i>0?'n':''}">${c}</td>`).join('')+'</tr>').join('');
+  return `<table><thead><tr>${h}</tr></thead><tbody>${b}</tbody></table>`;
+}
+function grpRows(prefix,obj){
+  return FIN_GROUPS[prefix].map(spec=>{const [lab,key]=spec.split('|'); return [lab, fmt(+(obj?.[key])||0)];});
+}
+function companyFin(name, c, is){
+  const inc = tbl(['قائمة الدخل','ر.س'],[
+    ['الإيرادات', fmt(is.revenue)],
+    ['تكلفة المبيعات', fmt(is.cogs)],
+  ]) ;
+  // income with computed rows as a custom table
+  const incHtml = `<table><thead><tr><th>قائمة الدخل</th><th class="n">ر.س</th></tr></thead><tbody>
+    <tr><td>الإيرادات</td><td class="n">${fmt(is.revenue)}</td></tr>
+    <tr><td>تكلفة المبيعات</td><td class="n">${fmt(is.cogs)}</td></tr>
+    <tr class="sub"><td>مجمل الربح</td><td class="n">${fmt(is.gross)}</td></tr>
+    ${grpRows('op',c.op).map(r=>`<tr><td style="padding-inline-start:22px">${r[0]}</td><td class="n">${r[1]}</td></tr>`).join('')}
+    <tr class="sub"><td>إجمالي المصروفات التشغيلية</td><td class="n">${fmt(is.opex)}</td></tr>
+    <tr class="sub"><td>الربح التشغيلي (EBIT)</td><td class="n">${fmt(is.ebit)}</td></tr>
+    <tr><td>مصروفات تمويلية</td><td class="n">${fmt(is.finance)}</td></tr>
+    <tr><td>الربح قبل الزكاة</td><td class="n">${fmt(is.pbt)}</td></tr>
+    <tr><td>الزكاة</td><td class="n">${fmt(is.zakat)}</td></tr>
+    <tr class="total"><td>صافي الربح</td><td class="n">${fmt(is.net)}</td></tr>
+  </tbody></table>`;
+
+  const bsHtml = `<table style="margin-top:14px"><thead><tr><th>المركز المالي</th><th class="n">ر.س</th></tr></thead><tbody>
+    ${grpRows('ca',c.ca).map(r=>`<tr><td>${r[0]}</td><td class="n">${r[1]}</td></tr>`).join('')}
+    <tr class="sub"><td>إجمالي الأصول المتداولة</td><td class="n">${fmt(sum(c.ca))}</td></tr>
+    ${grpRows('fa',c.fa).map(r=>`<tr><td>${r[0]}</td><td class="n">${r[1]}</td></tr>`).join('')}
+    <tr class="sub"><td>إجمالي الأصول الثابتة</td><td class="n">${fmt(sum(c.fa))}</td></tr>
+    <tr class="total"><td>إجمالي الأصول</td><td class="n">${fmt(sum(c.ca)+sum(c.fa))}</td></tr>
+    ${grpRows('cl',c.cl).map(r=>`<tr><td>${r[0]}</td><td class="n">${r[1]}</td></tr>`).join('')}
+    <tr class="sub"><td>إجمالي الخصوم المتداولة</td><td class="n">${fmt(sum(c.cl))}</td></tr>
+    ${grpRows('ncl',c.ncl).map(r=>`<tr><td>${r[0]}</td><td class="n">${r[1]}</td></tr>`).join('')}
+    <tr class="sub"><td>إجمالي الخصوم غير المتداولة</td><td class="n">${fmt(sum(c.ncl))}</td></tr>
+    ${grpRows('eq',c.eq).map(r=>`<tr><td>${r[0]}</td><td class="n">${r[1]}</td></tr>`).join('')}
+    <tr class="sub"><td>إجمالي حقوق الملكية</td><td class="n">${fmt(sum(c.eq))}</td></tr>
+    <tr class="total"><td>إجمالي الخصوم وحقوق الملكية</td><td class="n">${fmt(sum(c.cl)+sum(c.ncl)+sum(c.eq))}</td></tr>
+  </tbody></table>`;
+
+  return `<div class="card"><div class="card-title"><span class="dot"></span>${esc(name)} <span class="muted" style="font-weight:400;font-size:12px">${esc(c.role||'')}</span></div>${incHtml}${bsHtml}</div>`;
+}
+function swotBox(cls,title,col,arr){
+  const items=(arr||[]).map(x=>`<li>${esc(x)}</li>`).join('') || '<li class="muted">—</li>';
+  return `<div class="swot-box ${cls}"><h4 style="color:${col}">${title}</h4><ul>${items}</ul></div>`;
+}
+function listCard(lists,key){
+  const arr=(lists&&lists[key])||[];
+  const inner = arr.length
+    ? '<div class="ilist">'+arr.map(it=>`<div class="it"><b>${esc(it.b)}</b><span>${esc(it.s)}</span></div>`).join('')+'</div>'
+    : '<div class="muted">لا توجد بنود.</div>';
+  return card(LIST_LABELS[key]||key, inner);
+}
+
+/* ===== التشغيل + التحديث التلقائي ===== */
+function setupAuto(){
+  clearInterval(timer);
+  if(document.getElementById('autoChk').checked){ timer=setInterval(loadAll, 15000); }
+}
+document.getElementById('autoChk').addEventListener('change', setupAuto);
+
+// تحديث فوري عند أي تغيير في السحابة (Realtime)
+try{
+  sb.channel('study-changes')
+    .on('postgres_changes', {event:'*', schema:'public', table:CLOUD_TABLE}, ()=> loadAll())
+    .subscribe();
+}catch(e){ console.warn('realtime off', e); }
+
+loadAll();
+setupAuto();
+</script>
+</body>
+</html>
