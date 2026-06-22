@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root{
   --ink:#14213D;
@@ -317,6 +318,8 @@ input:disabled,select:disabled,textarea:disabled,input[type=range]:disabled{opac
       <button class="btn" id="btnTemplate" onclick="downloadTemplate()">📥 قالب Excel</button>
       <button class="btn" id="btnExcel" onclick="document.getElementById('xlsImp').click()" style="display:none">📊 استيراد Excel</button>
       <input type="file" id="xlsImp" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event)">
+      <span id="cloudChip" class="user-chip" title="حالة المزامنة السحابية" style="gap:6px">☁️ <span id="cloudTxt">—</span></span>
+      <button class="btn" id="btnSync" onclick="manualSync()" title="جلب أحدث نسخة من السحابة">🔄 مزامنة</button>
       <button class="btn" onclick="exportData()">⬇ حفظ نسخة</button>
       <button class="btn" id="btnImport" onclick="document.getElementById('imp').click()" style="display:none">⬆ استيراد</button>
       <input type="file" id="imp" accept=".json" style="display:none" onchange="importData(event)">
@@ -374,6 +377,76 @@ const D = {
   scores:{ financial:0, market:0, strategic:0, legal:0, hr:0, integration:0 },
   weights:{ financial:25, market:15, strategic:18, legal:14, hr:12, integration:16 }
 };
+
+/* ============================================================
+   ☁️ قاعدة البيانات السحابية المجانية (Supabase)
+   عدّل القيمتين التاليتين فقط ببيانات مشروعك ثم احفظ الملف.
+   احصل عليهما من: Supabase → Project Settings → API
+   ============================================================ */
+const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co';      // ←①  Project URL
+const SUPABASE_KEY = 'YOUR-ANON-PUBLIC-KEY';                  // ←②  anon public key
+const CLOUD_TABLE  = 'merger_study';   // اسم الجدول (لا تغيّره إلا إذا غيّرت SQL)
+const CLOUD_ROW_ID = 'main';           // صف واحد يحوي كامل الدراسة لكل المستخدمين
+
+let sb = null, cloudReady = false, _cloudTimer = null;
+
+function cloudInit(){
+  try{
+    if(window.supabase && SUPABASE_URL.indexOf('YOUR-') < 0){
+      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      cloudReady = true;
+    }
+  }catch(e){ cloudReady = false; }
+}
+
+function setCloudStatus(state){
+  const t = document.getElementById('cloudTxt');
+  const c = document.getElementById('cloudChip');
+  if(!t) return;
+  const map = {
+    ok:    ['متزامن',  '#1F7A5A'],
+    saving:['يحفظ…',   '#C8861A'],
+    error: ['خطأ',     '#B23A48'],
+    off:   ['محلي فقط','#5B6472']
+  };
+  const [txt,col] = map[state] || map.off;
+  t.textContent = txt;
+  if(c) c.style.color = col;
+}
+
+async function cloudLoad(){
+  if(!cloudReady) return false;
+  try{
+    const { data, error } = await sb
+      .from(CLOUD_TABLE).select('data').eq('id', CLOUD_ROW_ID).maybeSingle();
+    if(error) throw error;
+    if(data && data.data){ Object.assign(D, data.data); return true; }
+    return false;                 // لا يوجد صف بعد (أول تشغيل)
+  }catch(e){ console.warn('cloudLoad', e); setCloudStatus('error'); return false; }
+}
+
+async function cloudSave(){
+  if(!cloudReady) return;
+  try{
+    setCloudStatus('saving');
+    const { error } = await sb.from(CLOUD_TABLE)
+      .upsert({ id: CLOUD_ROW_ID, data: D, updated_at: new Date().toISOString() });
+    setCloudStatus(error ? 'error' : 'ok');
+  }catch(e){ console.warn('cloudSave', e); setCloudStatus('error'); }
+}
+
+async function manualSync(){
+  if(!cloudReady){ alert('السحابة غير مهيّأة — عدّل SUPABASE_URL و SUPABASE_KEY في أعلى السكربت.'); return; }
+  setCloudStatus('saving');
+  const ok = await cloudLoad();
+  if(ok){
+    seedAdmin(); normalizeUsers();
+    if(session){ const me=(D.users||[]).find(x=>x.u===session.u); if(me){ session=me; runApp(); } }
+    setCloudStatus('ok');
+  }else{
+    setCloudStatus(cloudReady ? 'ok' : 'off');
+  }
+}
 
 /* ---- محرك الحساب المالي ---- */
 function opTotal(c){return Object.values(c.op).reduce((a,b)=>a+b,0)}
@@ -1421,7 +1494,10 @@ function normalizeUsers(){
 const SKEY='mergerDB_v3';
 let session=null;
 
-function saveDB(){ try{localStorage.setItem(SKEY,JSON.stringify(D));}catch(e){} }
+function saveDB(){
+  try{localStorage.setItem(SKEY,JSON.stringify(D));}catch(e){}
+  if(cloudReady){ clearTimeout(_cloudTimer); _cloudTimer=setTimeout(cloudSave, 800); }
+}
 function loadDB(){ try{const r=localStorage.getItem(SKEY); if(r) Object.assign(D,JSON.parse(r));}catch(e){} }
 function seedAdmin(){
   if(!Array.isArray(D.users)||!D.users.length){
@@ -1564,18 +1640,29 @@ function delUser(i){
 /* ============================================================
    التشغيل والتهيئة
    ============================================================ */
-loadDB();
-seedAdmin();
-normalizeUsers();
-saveDB();
-// إخفاء التطبيق حتى تسجيل الدخول
-['.topbar','.tabs','#main'].forEach(s=>{const el=document.querySelector(s); if(el)el.style.display='none';});
-// تلميح بيانات الدخول الافتراضية (يظهر فقط عند وجود حساب admin الافتراضي)
-(function(){
+function refreshLoginHint(){
   const def=(D.users||[]).find(x=>x.u==='admin'&&x.p==='admin123');
-  document.getElementById('loginHint').innerHTML = def
+  const el=document.getElementById('loginHint'); if(!el) return;
+  el.innerHTML = def
     ? 'الدخول الأول — المستخدم: <b>admin</b> · كلمة المرور: <b>admin123</b><br>أنشئ مستخدمين جددًا من «المستخدمون» بعد الدخول'
     : 'أدخل بيانات الحساب الذي أنشأه مدير النظام';
+}
+
+// إخفاء التطبيق حتى تسجيل الدخول
+['.topbar','.tabs','#main'].forEach(s=>{const el=document.querySelector(s); if(el)el.style.display='none';});
+
+loadDB();        // كاش محلي فوري (يعمل حتى بدون إنترنت)
+cloudInit();
+
+(async function boot(){
+  setCloudStatus(cloudReady ? 'saving' : 'off');
+  const got = await cloudLoad();          // اجلب أحدث نسخة مشتركة من السحابة
+  seedAdmin();
+  normalizeUsers();
+  if(!got){ saveDB(); }                   // أول تشغيل: أنشئ الصف السحابي + الكاش
+  else { try{localStorage.setItem(SKEY,JSON.stringify(D));}catch(e){} }
+  refreshLoginHint();
+  setCloudStatus(cloudReady ? 'ok' : 'off');
 })();
 </script>
 </body>
