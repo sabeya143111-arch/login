@@ -254,6 +254,26 @@ input:disabled,select:disabled,textarea:disabled,input[type=range]:disabled{opac
 .acc-row select{font-family:inherit;font-size:13px;border:1px solid var(--line);border-radius:7px;padding:5px 9px;background:#fff;color:var(--ink);min-width:104px}
 .acc-row select:focus{outline:2px solid var(--brass-soft);border-color:var(--brass)}
 @media(max-width:600px){.acc-grid{grid-template-columns:1fr}}
+/* ---- Financial sub-tabs & flexible entry ---- */
+.subtabs{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 18px;border-bottom:1px solid var(--line);padding-bottom:0}
+.subtab{font-family:"Reem Kufi";font-size:13.5px;font-weight:500;color:var(--muted);background:none;border:none;border-bottom:2.5px solid transparent;cursor:pointer;padding:10px 14px;white-space:nowrap}
+.subtab:hover{color:var(--ink)}
+.subtab.active{color:var(--ink);border-bottom-color:var(--brass)}
+.fpanel{display:none}
+.fpanel.active{display:block;animation:fade .3s ease}
+.fname{width:100%;min-width:150px;font-family:inherit;font-size:13px;border:1px solid var(--line);border-radius:6px;padding:5px 8px;background:#fff;color:var(--ink)}
+.fname:focus{outline:2px solid var(--brass-soft);border-color:var(--brass)}
+.fin-name{font-weight:500}
+td.elimrow{color:var(--neg);font-size:12px}
+.wbar{height:7px;border-radius:5px;background:#EDE8DC;overflow:hidden;min-width:60px}
+.wbar i{display:block;height:100%;background:var(--brass)}
+.fchint{font-size:11px;color:var(--muted);font-weight:400}
+.note-entry{border:1px solid var(--line);border-radius:11px;padding:14px;margin-bottom:12px;background:#fff}
+.note-entry .note-t{width:100%;font-family:inherit;font-weight:600;font-size:14px;border:none;border-bottom:1px solid var(--line);padding:4px 2px 8px;margin-bottom:10px;color:var(--ink);background:none}
+.note-entry .note-t:focus{outline:none;border-bottom-color:var(--brass)}
+.note-entry textarea{width:100%;font-family:inherit;font-size:13.5px;border:none;resize:vertical;color:#3a4256;line-height:1.7;background:none}
+.note-entry textarea:focus{outline:none}
+.note-entry .note-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
 </style>
 </head>
 <body>
@@ -313,12 +333,12 @@ input:disabled,select:disabled,textarea:disabled,input[type=range]:disabled{opac
     </div>
     <div class="topbar-actions" id="topActions">
       <div class="user-chip" id="userChip"></div>
+      <span id="cloudChip" class="user-chip" title="حالة المزامنة السحابية" style="gap:6px">☁️ <span id="cloudTxt">—</span></span>
+      <button class="btn" id="btnSync" onclick="manualSync()" title="جلب أحدث نسخة من السحابة">🔄 مزامنة</button>
       <button class="btn" id="btnUsers" onclick="openUsers()" style="display:none">👥 المستخدمون</button>
       <button class="btn" id="btnTemplate" onclick="downloadTemplate()">📥 قالب Excel</button>
       <button class="btn" id="btnExcel" onclick="document.getElementById('xlsImp').click()" style="display:none">📊 استيراد Excel</button>
       <input type="file" id="xlsImp" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event)">
-      <span id="cloudChip" class="user-chip" title="حالة المزامنة السحابية" style="gap:6px">☁️ <span id="cloudTxt">—</span></span>
-      <button class="btn" id="btnSync" onclick="manualSync()" title="جلب أحدث نسخة من السحابة">🔄 مزامنة</button>
       <button class="btn" onclick="exportData()">⬇ حفظ نسخة</button>
       <button class="btn" id="btnImport" onclick="document.getElementById('imp').click()" style="display:none">⬆ استيراد</button>
       <input type="file" id="imp" accept=".json" style="display:none" onchange="importData(event)">
@@ -342,157 +362,124 @@ const fmt = (n)=> (isFinite(n)? Math.round(n).toLocaleString('en-US') : '—');
 const fmt1 = (n)=> (isFinite(n)? n.toLocaleString('en-US',{maximumFractionDigits:1}) : '—');
 const pct = (n)=> (isFinite(n)? n.toLocaleString('en-US',{maximumFractionDigits:1})+'%' : '—');
 
-// كل قيمة بالريال السعودي
-const D = {
-  // سواج = موزّع الجملة (مورّد) ، الأروش = التجزئة — كل القيم تبدأ صفرًا، يُدخلها المستخدم
-  swaj:{
-    name:'سواج التجارية', role:'الجملة والتوريد',
-    revenue:0, cogs:0,
-    op:{salaries:0, rent:0, marketing:0, admin:0, depreciation:0, other:0},
-    finance:0,
-    ca:{cash:0, receivables:0, inventory:0, prepaid:0, other:0},
-    fa:{property:0, fixtures:0, vehicles:0, intangibles:0, other:0},
-    cl:{payables:0, stloans:0, accruals:0, zakat:0, other:0},
-    ncl:{ltloans:0, eosb:0},
-    eq:{capital:0, reserves:0, retained:0}
-  },
-  laroche:{
-    name:'الأروش التجارية', role:'التجزئة',
-    revenue:0, cogs:0,
-    op:{salaries:0, rent:0, marketing:0, admin:0, depreciation:0, other:0},
-    finance:0,
-    ca:{cash:0, receivables:0, inventory:0, prepaid:0, other:0},
-    fa:{property:0, fixtures:0, vehicles:0, intangibles:0, other:0},
-    cl:{payables:0, stloans:0, accruals:0, zakat:0, other:0},
-    ncl:{ltloans:0, eosb:0},
-    eq:{capital:0, reserves:0, retained:0}
-  },
-  // المعاملات البينية (سواج تبيع للأروش)
-  inter:{ sales:0, margin:0, invRetained:0, balance:0 },
-  zakatRate:2.5,
-  // التآزر المتوقع بعد الدمج — يُدخله المستخدم بعد التحليل
-  syn:{ overhead:0, wcRelease:0, revenueSyn:0 },
-  // درجات الدراسات (0-100) — تبدأ بانتظار التقييم
-  scores:{ financial:0, market:0, strategic:0, legal:0, hr:0, integration:0 },
-  weights:{ financial:25, market:15, strategic:18, legal:14, hr:12, integration:16 }
-};
-
 /* ============================================================
-   ☁️ قاعدة البيانات (Google Sheet + Apps Script)
-   ضع رابط تطبيق الويب (Web App) فقط ثم احفظ الملف.
-   احصل عليه من: Apps Script → Deploy → New deployment → Web app → /exec
+   ☁️ المزامنة السحابية (Google Sheet + Apps Script)
+   ضع رابط تطبيق الويب (/exec) في GAS_URL ثم احفظ الملف.
+   Apps Script → Deploy → New deployment → Web app → /exec
    ============================================================ */
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwMRd1-7CIKYaz47FgRkF4zEnWF2BYl669SJPJB40jcXEN_RSPSl6LzesF0H6v9ZlX3RQ/exec';  // ←①  رابط /exec
-const CLOUD_ROW_ID = 'main';           // صف واحد يحوي كامل الدراسة لكل المستخدمين
-
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwMRd1-7CIKYaz47FgRkF4zEnWF2BYl669SJPJB40jcXEN_RSPSl6LzesF0H6v9ZlX3RQ/exec';  // ← رابط /exec
+const CLOUD_ROW_ID = 'main';
 let cloudReady = false, _cloudTimer = null;
-
-function cloudInit(){
-  cloudReady = /script\.google\.com\/macros\/s\//.test(GAS_URL);
-}
-
+function cloudInit(){ cloudReady = /script\.google\.com\/macros\/s\//.test(GAS_URL); }
 function setCloudStatus(state){
-  const t = document.getElementById('cloudTxt');
-  const c = document.getElementById('cloudChip');
+  const t=document.getElementById('cloudTxt'), c=document.getElementById('cloudChip');
   if(!t) return;
-  const map = {
-    ok:    ['متزامن',  '#1F7A5A'],
-    saving:['يحفظ…',   '#C8861A'],
-    error: ['خطأ',     '#B23A48'],
-    off:   ['محلي فقط','#5B6472']
-  };
-  const [txt,col] = map[state] || map.off;
-  t.textContent = txt;
-  if(c) c.style.color = col;
+  const map={ ok:['متزامن','#1F7A5A'], saving:['يحفظ…','#C8861A'], error:['خطأ','#B23A48'], off:['محلي فقط','#5B6472'] };
+  const [txt,col]=map[state]||map.off; t.textContent=txt; if(c) c.style.color=col;
 }
-
 async function cloudLoad(){
   if(!cloudReady) return false;
   try{
-    const res = await fetch(GAS_URL + '?id=' + encodeURIComponent(CLOUD_ROW_ID) + '&t=' + Date.now());
-    const j = await res.json();
+    const res=await fetch(GAS_URL+'?id='+encodeURIComponent(CLOUD_ROW_ID)+'&t='+Date.now());
+    const j=await res.json();
     if(j && j.ok && j.data){ Object.assign(D, j.data); return true; }
-    return false;                 // لا يوجد صف بعد (أول تشغيل)
-  }catch(e){ console.warn('cloudLoad', e); setCloudStatus('error'); return false; }
+    return false;
+  }catch(e){ console.warn('cloudLoad',e); setCloudStatus('error'); return false; }
 }
-
 async function cloudSave(){
   if(!cloudReady) return;
   try{
     setCloudStatus('saving');
-    const res = await fetch(GAS_URL, {
-      method:'POST',
-      headers:{ 'Content-Type':'text/plain;charset=utf-8' },   // يتفادى preflight CORS
-      body: JSON.stringify({ id: CLOUD_ROW_ID, data: D })
-    });
-    const j = await res.json();
-    setCloudStatus(j && j.ok ? 'ok' : 'error');
-  }catch(e){ console.warn('cloudSave', e); setCloudStatus('error'); }
+    const res=await fetch(GAS_URL,{ method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({id:CLOUD_ROW_ID,data:D}) });
+    const j=await res.json(); setCloudStatus(j && j.ok ? 'ok' : 'error');
+  }catch(e){ console.warn('cloudSave',e); setCloudStatus('error'); }
 }
-
 async function manualSync(){
   if(!cloudReady){ alert('السحابة غير مهيّأة — ضع رابط تطبيق الويب (GAS_URL) في أعلى السكربت.'); return; }
   setCloudStatus('saving');
-  const ok = await cloudLoad();
+  const ok=await cloudLoad();
   if(ok){
-    seedAdmin(); normalizeUsers();
+    ensureFin(); seedAdmin(); normalizeUsers();
     if(session){ const me=(D.users||[]).find(x=>x.u===session.u); if(me){ session=me; runApp(); } }
     setCloudStatus('ok');
-  }else{
-    setCloudStatus(cloudReady ? 'ok' : 'off');
-  }
+  }else{ setCloudStatus(cloudReady?'ok':'off'); }
 }
 
-/* ---- محرك الحساب المالي ---- */
-function opTotal(c){return Object.values(c.op).reduce((a,b)=>a+b,0)}
-function caTotal(c){return Object.values(c.ca).reduce((a,b)=>a+b,0)}
-function faTotal(c){return Object.values(c.fa).reduce((a,b)=>a+b,0)}
-function clTotal(c){return Object.values(c.cl).reduce((a,b)=>a+b,0)}
-function nclTotal(c){return Object.values(c.ncl).reduce((a,b)=>a+b,0)}
-function eqTotal(c){return Object.values(c.eq).reduce((a,b)=>a+b,0)}
+// كل قيمة بالريال السعودي
+const D = {
+  fin:null, // يُهيّأ عبر ensureFin()
+  inter:{ sales:0, margin:0, invRetained:0, balance:0 },
+  zakatRate:2.5,
+  syn:{ overhead:0, wcRelease:0, revenueSyn:0 },
+  scores:{ financial:0, market:0, strategic:0, legal:0, hr:0, integration:0 },
+  weights:{ financial:25, market:15, strategic:18, legal:14, hr:12, integration:16 }
+};
+function ensureFin(){
+  if(D.fin){ if(!Array.isArray(D.fin.notesList)) D.fin.notesList=[{t:'إيضاحات قائمة الدخل',b:''},{t:'إيضاحات الميزانية',b:''},{t:'إيضاحات المصاريف',b:''}]; return; }
+  const L=(n,tag)=>({n,s:0,l:0,tag:tag||''});
+  D.fin={
+    revenue:{s:0,l:0}, cogs:{s:0,l:0}, finance:{s:0,l:0},
+    opex:[L('رواتب وأجور'),L('إيجارات'),L('تسويق ودعاية'),L('مصروفات إدارية وعمومية'),L('إهلاك واستهلاك'),L('مصروفات تشغيلية أخرى')],
+    ca:[L('النقد وما في حكمه'),L('ذمم مدينة (عملاء)','recv'),L('المخزون','inv'),L('مصروفات مدفوعة مقدمًا'),L('أصول متداولة أخرى')],
+    fa:[L('عقارات وممتلكات'),L('أثاث وتجهيزات وديكورات'),L('سيارات ومعدات'),L('أصول غير ملموسة (شهرة/برمجيات)'),L('أصول ثابتة أخرى')],
+    cl:[L('ذمم دائنة (موردون)','pay'),L('قروض قصيرة الأجل'),L('مصروفات مستحقة'),L('مخصص الزكاة'),L('خصوم متداولة أخرى')],
+    ncl:[L('قروض طويلة الأجل'),L('مكافأة نهاية الخدمة')],
+    eq:[L('رأس المال'),L('الاحتياطيات'),L('الأرباح المبقاة')],
+    notes:{income:'',balance:'',expenses:''},
+    notesList:[{t:'إيضاحات قائمة الدخل',b:''},{t:'إيضاحات الميزانية',b:''},{t:'إيضاحات المصاريف',b:''}]
+  };
+}
 
-function incomeStatement(c){
-  const gross = c.revenue - c.cogs;
-  const opex = opTotal(c);
-  const ebit = gross - opex;
-  const pbt = ebit - c.finance;
-  const zakat = Math.max(0, pbt) * D.zakatRate/100;
-  const net = pbt - zakat;
-  return {revenue:c.revenue, cogs:c.cogs, gross, opex, ebit, finance:c.finance, pbt, zakat, net};
+/* ---- محرك الحساب المالي (بنود مرنة) ---- */
+function sumSide(arr,side){return (arr||[]).reduce((a,x)=>a+(+x[side]||0),0);}
+function tagSum(arr,tag,side){return (arr||[]).filter(x=>x.tag===tag).reduce((a,x)=>a+(+x[side]||0),0);}
+
+function incomeStatement(side){
+  const f=D.fin;
+  const revenue=+f.revenue[side]||0, cogs=+f.cogs[side]||0;
+  const gross=revenue-cogs;
+  const opex=sumSide(f.opex,side);
+  const ebit=gross-opex;
+  const finance=+f.finance[side]||0;
+  const pbt=ebit-finance;
+  const zakat=Math.max(0,pbt)*D.zakatRate/100;
+  const net=pbt-zakat;
+  return {revenue,cogs,gross,opex,ebit,finance,pbt,zakat,net};
 }
 
 function unrealizedProfit(){ return D.inter.sales * (D.inter.margin/100) * (D.inter.invRetained/100); }
 
 function consolidated(){
-  const s=D.swaj,l=D.laroche;
-  const up = unrealizedProfit();
-  const revenue = s.revenue + l.revenue - D.inter.sales;
-  const cogs = s.cogs + l.cogs - D.inter.sales + up;
-  const gross = revenue - cogs;
-  const opex = opTotal(s)+opTotal(l);
-  const ebit = gross - opex;
-  const finance = s.finance + l.finance;
-  const pbt = ebit - finance;
-  const zakat = Math.max(0,pbt)*D.zakatRate/100;
-  const net = pbt - zakat;
-  // الميزانية
-  const inv = s.ca.inventory + l.ca.inventory - up;
-  const recv = s.ca.receivables + l.ca.receivables - D.inter.balance;
-  const cash = s.ca.cash + l.ca.cash;
-  const ca = caTotal(s)+caTotal(l) - D.inter.balance - up;
-  const fa = faTotal(s)+faTotal(l);
-  const assets = ca+fa;
-  const payables = s.cl.payables + l.cl.payables - D.inter.balance;
-  const cl = clTotal(s)+clTotal(l) - D.inter.balance;
-  const ncl = nclTotal(s)+nclTotal(l);
-  const liab = cl+ncl;
-  const eq = eqTotal(s)+eqTotal(l);
-  return {revenue,cogs,gross,opex,ebit,finance,pbt,zakat,net,
-          up, inv,recv,cash,ca,fa,assets,payables,cl,ncl,liab,eq};
+  const f=D.fin, up=unrealizedProfit();
+  const s=incomeStatement('s'), l=incomeStatement('l');
+  const revenue=s.revenue+l.revenue - D.inter.sales;
+  const cogs=s.cogs+l.cogs - D.inter.sales + up;
+  const gross=revenue-cogs;
+  const opex=s.opex+l.opex;
+  const ebit=gross-opex;
+  const finance=s.finance+l.finance;
+  const pbt=ebit-finance;
+  const zakat=Math.max(0,pbt)*D.zakatRate/100;
+  const net=pbt-zakat;
+  const invTot=tagSum(f.ca,'inv','s')+tagSum(f.ca,'inv','l');
+  const recvTot=tagSum(f.ca,'recv','s')+tagSum(f.ca,'recv','l');
+  const payTot=tagSum(f.cl,'pay','s')+tagSum(f.cl,'pay','l');
+  const inv=invTot-up, recv=recvTot-D.inter.balance;
+  const caRaw=sumSide(f.ca,'s')+sumSide(f.ca,'l');
+  const ca=caRaw - D.inter.balance - up;
+  const fa=sumSide(f.fa,'s')+sumSide(f.fa,'l');
+  const assets=ca+fa;
+  const clRaw=sumSide(f.cl,'s')+sumSide(f.cl,'l');
+  const cl=clRaw - D.inter.balance;
+  const ncl=sumSide(f.ncl,'s')+sumSide(f.ncl,'l');
+  const liab=cl+ncl;
+  const eq=sumSide(f.eq,'s')+sumSide(f.eq,'l');
+  const payables=payTot-D.inter.balance;
+  const other=ca-recv-inv;
+  return {revenue,cogs,gross,opex,ebit,finance,pbt,zakat,net,up,inv,recv,other,ca,fa,assets,payables,cl,ncl,liab,eq};
 }
 
 function ratios(c, is, bs){
-  // bs: {ca,fa,assets,cl,ncl,liab,eq,inventory}
   const cr = bs.ca/bs.cl;
   const quick = (bs.ca-bs.inventory)/bs.cl;
   const turn = is.cogs/bs.inventory;
@@ -596,21 +583,13 @@ function secOverview(){
 }
 
 /* ---------- 2. المالية والمحاسبية ---------- */
-const opRows=[['salaries','رواتب وأجور'],['rent','إيجارات'],['marketing','تسويق ودعاية'],['admin','مصروفات إدارية وعمومية'],['depreciation','إهلاك واستهلاك'],['other','مصروفات أخرى']];
-const caRows=[['cash','النقد وما في حكمه'],['receivables','ذمم مدينة (عملاء)'],['inventory','المخزون'],['prepaid','مصروفات مدفوعة مقدمًا'],['other','أصول متداولة أخرى']];
-const faRows=[['property','عقارات وممتلكات'],['fixtures','أثاث وتجهيزات وديكورات'],['vehicles','سيارات ومعدات'],['intangibles','أصول غير ملموسة (شهرة/برمجيات)'],['other','أصول ثابتة أخرى']];
-const clRows=[['payables','ذمم دائنة (موردون)'],['stloans','قروض قصيرة الأجل'],['accruals','مصروفات مستحقة'],['zakat','مخصص الزكاة'],['other','خصوم متداولة أخرى']];
-const nclRows=[['ltloans','قروض طويلة الأجل'],['eosb','مكافأة نهاية الخدمة']];
-const eqRows=[['capital','رأس المال'],['reserves','الاحتياطيات'],['retained','الأرباح المبقاة']];
-
-function inCell(co,grp,key){return `<input class="fin-in" type="number" data-co="${co}" data-grp="${grp}" data-key="${key}" value="${D[co][grp][key]}">`}
 function interCell(key,suffix=''){return `<input class="fin-in" type="number" data-inter="${key}" value="${D.inter[key]}" style="width:140px"> ${suffix}`}
 
 function secFinancial(){
   return `<section class="section" id="sec-financial">
     <div class="sec-head"><div class="eyebrow">الدراسة الأولى</div>
       <h2>التحليل المالي والمحاسبي</h2>
-      <p>تحليل المصروفات والإيرادات والأصول (متداولة وثابتة بأنواعها) والخصوم وحقوق الملكية لكل شركة، ثم قائمة دخل وميزانية <b>موحّدة</b> مع استبعاد المعاملات البينية وفق IFRS.</p>
+      <p>قائمة دخل وميزانية وكشف تحليلي للمصاريف بوزن نسبي وإيضاحات — بنود مرنة تضيفها وتحذفها، بإدخال يدوي أو سحب من Excel، مع توحيد تلقائي واستبعاد المعاملات البينية وفق IFRS.</p>
     </div>
 
     <div class="grid g4" id="finKpis"></div>
@@ -625,29 +604,42 @@ function secFinancial(){
         <tr><td>الرصيد البيني (ذمم سواج على الأروش)</td><td class="n">${interCell('balance','ر.س')}</td></tr>
         <tr class="sub"><td>الربح غير المحقّق المُستبعَد من المخزون</td><td class="n elim" id="upVal">—</td></tr>
       </table>
+      <div class="note no-print" style="margin-top:10px">طريقة الاحتساب تلقائية من الأرقام الأربعة أعلاه: تُطرح المبيعات البينية كاملةً من الإيراد <b>ومن</b> التكلفة (تصحيح تضخّم الإيراد دون تغيير الربح)، ثم يُحسب الربح غير المحقّق = <b>المبيعات البينية × الهامش × نسبة البضاعة الباقية</b> ويُضاف للتكلفة لأنه ربح عالق في مخزون لم يُبَع بعد لطرف خارجي. والرصيد البيني يُستبعَد من الذمم المدينة والدائنة في الميزانية.</div>
     </div>
 
-    <div class="card">
-      <div class="card-title"><span class="dot"></span>قائمة الدخل</div>
-      <p class="card-sub">عدّل القيم لكل شركة — يُحسب العمود الموحّد تلقائيًا بعد الاستبعاد.</p>
-      <table id="incomeTable"></table>
+    <div class="subtabs" id="finSub">
+      <button class="subtab active" data-fp="income" onclick="switchFin('income')">قائمة الدخل</button>
+      <button class="subtab" data-fp="balance" onclick="switchFin('balance')">الميزانية</button>
+      <button class="subtab" data-fp="expenses" onclick="switchFin('expenses')">كشف المصاريف التحليلي</button>
+      <button class="subtab" data-fp="ratios" onclick="switchFin('ratios')">المؤشرات</button>
+      <button class="subtab" data-fp="notes" onclick="switchFin('notes')">الإيضاحات</button>
     </div>
 
-    <div class="grid g2">
+    <div class="fpanel active" id="fp-income">
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>قائمة الدخل الموحّدة</div>
+        <p class="card-sub">أدخل الإيرادات والتكلفة والتمويل لكل شركة. المصروفات التشغيلية تُجمَّع من «كشف المصاريف». العمود الموحّد يُحسب تلقائيًا بعد الاستبعاد.</p>
+        <div style="overflow-x:auto"><table id="incomeTable"></table></div>
+      </div>
+    </div>
+
+    <div class="fpanel" id="fp-balance">
       <div class="card">
         <div class="card-title"><span class="dot"></span>الأصول</div>
-        <table id="assetsTable"></table>
+        <div style="overflow-x:auto"><table id="assetsTable"></table></div>
+        <div class="sc-foot">
+          <div><button class="btn sc-add" data-fadd="ca">＋ أصل متداول</button>
+          <button class="btn sc-add" data-fadd="fa">＋ أصل ثابت</button></div>
+        </div>
       </div>
       <div class="card">
         <div class="card-title"><span class="dot"></span>الخصوم وحقوق الملكية</div>
-        <table id="liabTable"></table>
-      </div>
-    </div>
-
-    <div class="grid g2">
-      <div class="card">
-        <div class="card-title"><span class="dot"></span>مقارنة الأداء (ر.س)</div>
-        <div class="chart-box"><canvas id="chFin"></canvas></div>
+        <div style="overflow-x:auto"><table id="liabTable"></table></div>
+        <div class="sc-foot">
+          <div><button class="btn sc-add" data-fadd="cl">＋ خصم متداول</button>
+          <button class="btn sc-add" data-fadd="ncl">＋ خصم غير متداول</button>
+          <button class="btn sc-add" data-fadd="eq">＋ بند حقوق ملكية</button></div>
+        </div>
       </div>
       <div class="card">
         <div class="card-title"><span class="dot"></span>تركيبة أصول الكيان الموحّد</div>
@@ -655,12 +647,51 @@ function secFinancial(){
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-title"><span class="dot"></span>المؤشرات المالية — قبل وبعد الدمج</div>
-      <p class="card-sub">"قبل" = مجموع الشركتين منفصلتين. "بعد" = الكيان الموحّد (مع أثر التآزر على المصروفات ورأس المال العامل).</p>
-      <table id="ratioTable"></table>
+    <div class="fpanel" id="fp-expenses">
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>الكشف التحليلي للمصاريف</div>
+        <p class="card-sub">بنود مرنة بوزن نسبي (نصيب كل بند من إجمالي المصروفات) ونسبته إلى الإيراد. أضِف أو احذف أي بند.</p>
+        <div style="overflow-x:auto"><table id="expTable"></table></div>
+        <div class="sc-foot"><button class="btn sc-add" data-fadd="opex">＋ إضافة بند مصروف</button></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>توزيع المصروفات الموحّدة</div>
+        <div class="chart-box"><canvas id="chExp"></canvas></div>
+      </div>
+    </div>
+
+    <div class="fpanel" id="fp-ratios">
+      <div class="grid g2">
+        <div class="card">
+          <div class="card-title"><span class="dot"></span>مقارنة الأداء (ر.س)</div>
+          <div class="chart-box"><canvas id="chFin"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="dot"></span>الهيكل المالي الموحّد</div>
+          <div class="chart-box"><canvas id="chStruct"></canvas></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>المؤشرات المالية — قبل وبعد الدمج</div>
+        <p class="card-sub">"قبل" = مجموع الشركتين منفصلتين. "بعد" = الكيان الموحّد مع أثر التآزر.</p>
+        <table id="ratioTable"></table>
+      </div>
+    </div>
+
+    <div class="fpanel" id="fp-notes">
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>إيضاحات القوائم المالية</div>
+        <p class="card-sub">أضف أي إيضاح يدوي بعنوان ونص — سياسات محاسبية، تفاصيل بنود، أسس تقييم، ملاحظات مدقّق. تظهر في التقرير المطبوع.</p>
+        <div id="notesList"></div>
+        <div class="sc-foot"><button class="btn sc-add" id="note-add">＋ إضافة إيضاح</button></div>
+      </div>
     </div>
   </section>`;
+}
+function switchFin(id){
+  document.querySelectorAll('#finSub .subtab').forEach(t=>t.classList.toggle('active',t.dataset.fp===id));
+  document.querySelectorAll('.fpanel').forEach(p=>p.classList.toggle('active',p.id==='fp-'+id));
+  renderFinCharts();
 }
 
 /* ---------- 3. السوق والعملاء ---------- */
@@ -1104,133 +1135,215 @@ function renderSwot(){
    الربط والحساب
    ============================================================ */
 function bindFinInputs(){
-  document.querySelectorAll('.fin-in').forEach(inp=>{
-    inp.addEventListener('input',()=>{
-      const v = parseFloat(inp.value)||0;
-      if(inp.dataset.inter){ D.inter[inp.dataset.inter]=v; }
-      else { D[inp.dataset.co][inp.dataset.grp][inp.dataset.key]=v; }
-      computeAll();
-    });
-  });
+  const sec=document.getElementById('sec-financial'); if(!sec)return;
+  sec.oninput=(e)=>{
+    const t=e.target, d=t.dataset;
+    if(d.inter!=null){ D.inter[d.inter]=num(t.value); recalcFin(); saveDB(); return; }
+    if(d.fnote!=null){ D.fin.notes[d.fnote]=t.value; saveDB(); return; }
+    if(d.notef!=null){ if(!D.fin.notesList)D.fin.notesList=[]; D.fin.notesList[+d.notei][d.notef]=t.value; saveDB(); return; }
+    if(d.fg!=null){
+      if(d.fn!=null){ D.fin[d.fg][+d.i].n=t.value; saveDB(); return; }
+      if(d.i!=null){ D.fin[d.fg][+d.i][d.side]=num(t.value); }
+      else { D.fin[d.fg][d.side]=num(t.value); }
+      recalcFin(); saveDB();
+    }
+  };
+  sec.onclick=(e)=>{
+    const na=e.target.closest('#note-add');
+    if(na){ if(!D.fin.notesList)D.fin.notesList=[]; D.fin.notesList.push({t:'',b:''}); renderNotesList(); applyFinPerms(); saveDB(); return; }
+    const nd=e.target.closest('[data-notedel]');
+    if(nd){ D.fin.notesList.splice(+nd.dataset.notedel,1); renderNotesList(); applyFinPerms(); saveDB(); return; }
+    const a=e.target.closest('[data-fadd]');
+    if(a){ const g=a.dataset.fadd; D.fin[g].push({n:'بند جديد',s:0,l:0,tag:''}); renderFinAll(); recalcFin(); saveDB(); return; }
+    const d=e.target.closest('[data-fdel]');
+    if(d){ D.fin[d.dataset.fdel].splice(+d.dataset.i,1); renderFinAll(); recalcFin(); saveDB(); }
+  };
 }
-function bindScores(){
-  document.querySelectorAll('[data-score]').forEach(r=>{
-    r.addEventListener('input',()=>{
-      D.scores[r.dataset.score]=parseInt(r.value);
-      document.getElementById('sval-'+r.dataset.score).textContent=r.value;
-      renderDash();saveDB();
-    });
-  });
+function bindScores(){}
+
+/* بناء صف بند مرن: اسم + قيمتان + (موحّد) + حذف */
+function flexRow(group,i,r,opts={}){
+  const cons=(+r.s||0)+(+r.l||0);
+  const tagTxt = r.tag==='inv'?' (مخزون)':r.tag==='recv'?' (ذمم مدينة)':r.tag==='pay'?' (ذمم دائنة)':'';
+  return `<tr>
+    <td><input class="fname fin-name" data-fg="${group}" data-i="${i}" data-fn="1" value="${esc(r.n)}">${tagTxt?`<span style="font-size:10px;color:var(--brass)">${tagTxt}</span>`:''}</td>
+    <td class="n"><input class="fin-in" type="number" data-fg="${group}" data-i="${i}" data-side="s" value="${r.s}"></td>
+    <td class="n"><input class="fin-in" type="number" data-fg="${group}" data-i="${i}" data-side="l" value="${r.l}"></td>
+    <td class="n"><span class="num" id="fc-${group}-${i}">${fmt(cons)}</span></td>
+    <td><button class="tbtn del" data-fdel="${group}" data-i="${i}">حذف</button></td>
+  </tr>`;
+}
+function singleRow(label,group,opts={}){
+  const f=D.fin[group];
+  return `<tr class="${opts.cls||''}"><td>${label}</td>
+    <td class="n"><input class="fin-in" type="number" data-fg="${group}" data-side="s" value="${f.s}"></td>
+    <td class="n"><input class="fin-in" type="number" data-fg="${group}" data-side="l" value="${f.l}"></td>
+    <td class="n"><span class="num" id="fc-${group}">${fmt((+f.s||0)+(+f.l||0))}</span></td><td></td></tr>`;
+}
+function calcRow(label,idbase,cls){
+  return `<tr class="${cls||''}"><td>${label}</td>
+    <td class="n"><span class="num" id="${idbase}-s">0</span></td>
+    <td class="n"><span class="num" id="${idbase}-l">0</span></td>
+    <td class="n"><span class="num" id="${idbase}-c">0</span></td><td></td></tr>`;
 }
 
-function computeAll(){
-  const s=incomeStatement(D.swaj), l=incomeStatement(D.laroche), c=consolidated();
-  document.getElementById('upVal').textContent = fmt(unrealizedProfit());
+function renderIncome(){
+  const el=document.getElementById('incomeTable'); if(!el)return;
+  el.innerHTML=`<thead><tr><th>البند</th><th class="n">سواج</th><th class="n">الأروش</th><th class="n">الموحّد</th><th></th></tr></thead><tbody>
+    ${singleRow('الإيرادات','revenue')}
+    ${singleRow('(–) تكلفة المبيعات','cogs')}
+    <tr class="sub"><td>(–) استبعاد المبيعات البينية <span class="fchint" id="inc-elims-x"></span></td><td class="n"></td><td class="n"></td><td class="n elim"><span class="num" id="inc-elims">0</span></td><td></td></tr>
+    <tr class="sub"><td>(+) ربح غير محقّق في المخزون <span class="fchint" id="inc-up-x"></span></td><td class="n"></td><td class="n"></td><td class="n elim"><span class="num" id="inc-up">0</span></td><td></td></tr>
+    ${calcRow('مجمل الربح','inc-g','sub')}
+    ${calcRow('(–) المصروفات التشغيلية','inc-o')}
+    ${calcRow('الربح التشغيلي','inc-e','sub')}
+    ${singleRow('(–) مصروفات تمويلية','finance')}
+    ${calcRow('الربح قبل الزكاة','inc-p')}
+    ${calcRow('(–) الزكاة','inc-z')}
+    ${calcRow('صافي الربح','inc-n','total')}
+  </tbody>`;
+}
+function renderGroupTable(elId, sections){
+  const el=document.getElementById(elId); if(!el)return;
+  let h=`<thead><tr><th>البند</th><th class="n">سواج</th><th class="n">الأروش</th><th class="n">الموحّد</th><th></th></tr></thead><tbody>`;
+  sections.forEach(sec=>{
+    h+=`<tr class="sub"><td colspan="5">${sec.title}</td></tr>`;
+    D.fin[sec.g].forEach((r,i)=> h+=flexRow(sec.g,i,r));
+    if(sec.elim) sec.elim.forEach(e=> h+=`<tr class="sub"><td class="elimrow">${e.label}</td><td class="n"></td><td class="n"></td><td class="n elim"><span class="num" id="${e.id}">0</span></td><td></td></tr>`);
+    h+=`<tr class="sub"><td>${sec.totalLabel}</td><td class="n"><span class="num" id="${sec.tid}-s">0</span></td><td class="n"><span class="num" id="${sec.tid}-l">0</span></td><td class="n"><span class="num" id="${sec.tid}-c">0</span></td><td></td></tr>`;
+  });
+  h+=`<tr class="total"><td>${sections.grandLabel||'الإجمالي'}</td><td class="n"><span class="num" id="${elId}-gs">0</span></td><td class="n"><span class="num" id="${elId}-gl">0</span></td><td class="n"><span class="num" id="${elId}-gc">0</span></td><td></td></tr>`;
+  el.innerHTML=h+'</tbody>';
+}
+function renderAssets(){
+  const secs=[
+    {g:'ca',title:'الأصول المتداولة',totalLabel:'مجموع المتداول',tid:'tot-ca',elim:[{label:'(–) استبعاد الرصيد البيني (ذمم مدينة)',id:'el-recv'},{label:'(–) استبعاد ربح غير محقّق (مخزون)',id:'el-inv'}]},
+    {g:'fa',title:'الأصول الثابتة',totalLabel:'مجموع الثابت',tid:'tot-fa'},
+  ]; secs.grandLabel='إجمالي الأصول';
+  renderGroupTable('assetsTable',secs);
+}
+function renderLiab(){
+  const secs=[
+    {g:'cl',title:'الخصوم المتداولة',totalLabel:'مجموع المتداولة',tid:'tot-cl',elim:[{label:'(–) استبعاد الرصيد البيني (ذمم دائنة)',id:'el-pay'}]},
+    {g:'ncl',title:'الخصوم غير المتداولة',totalLabel:'مجموع غير المتداولة',tid:'tot-ncl'},
+    {g:'eq',title:'حقوق الملكية',totalLabel:'مجموع حقوق الملكية',tid:'tot-eq'},
+  ]; secs.grandLabel='إجمالي الخصوم وحقوق الملكية';
+  renderGroupTable('liabTable',secs);
+}
+function renderExpenses(){
+  const el=document.getElementById('expTable'); if(!el)return;
+  let h=`<thead><tr><th>بند المصروف</th><th class="n">سواج</th><th class="n">الأروش</th><th class="n">الموحّد</th><th class="n">الوزن النسبي</th><th class="n">% من الإيراد</th><th></th></tr></thead><tbody>`;
+  D.fin.opex.forEach((r,i)=>{
+    h+=`<tr>
+      <td><input class="fname fin-name" data-fg="opex" data-i="${i}" data-fn="1" value="${esc(r.n)}"></td>
+      <td class="n"><input class="fin-in" type="number" data-fg="opex" data-i="${i}" data-side="s" value="${r.s}"></td>
+      <td class="n"><input class="fin-in" type="number" data-fg="opex" data-i="${i}" data-side="l" value="${r.l}"></td>
+      <td class="n"><span class="num" id="ex-c-${i}">0</span></td>
+      <td class="n"><div style="display:flex;align-items:center;gap:6px;justify-content:flex-end"><span class="num" id="ex-w-${i}">0%</span><div class="wbar"><i id="ex-bar-${i}" style="width:0%"></i></div></div></td>
+      <td class="n"><span class="num" id="ex-r-${i}">0%</span></td>
+      <td><button class="tbtn del" data-fdel="opex" data-i="${i}">حذف</button></td>
+    </tr>`;
+  });
+  h+=`<tr class="total"><td>إجمالي المصروفات التشغيلية</td><td class="n"><span class="num" id="ex-ts">0</span></td><td class="n"><span class="num" id="ex-tl">0</span></td><td class="n"><span class="num" id="ex-tc">0</span></td><td class="n">100%</td><td class="n"><span class="num" id="ex-tr">0%</span></td><td></td></tr>`;
+  el.innerHTML=h+'</tbody>';
+}
+function renderNotesList(){
+  const el=document.getElementById('notesList'); if(!el)return;
+  const arr=D.fin.notesList||[];
+  el.innerHTML=arr.map((r,i)=>`<div class="note-entry">
+    <div class="note-top"><input class="note-in note-t" data-notei="${i}" data-notef="t" value="${esc(r.t)}" placeholder="عنوان الإيضاح"><button class="tbtn del note-del" data-notedel="${i}">حذف</button></div>
+    <textarea class="note-in" data-notei="${i}" data-notef="b" rows="3" placeholder="نص الإيضاح...">${(r.b||'').replace(/</g,'&lt;')}</textarea>
+  </div>`).join('');
+}
+function renderFinAll(){
+  renderIncome(); renderAssets(); renderLiab(); renderExpenses(); renderNotesList();
+  applyFinPerms();
+}
+function applyFinPerms(){
+  const can=canEditSec('financial');
+  document.querySelectorAll('#sec-financial .fin-in, #sec-financial .fname, #sec-financial .note-in').forEach(i=>i.disabled=!can);
+  document.querySelectorAll('#sec-financial [data-fadd], #sec-financial [data-fdel], #sec-financial .note-del, #sec-financial #note-add').forEach(b=>b.style.display=can?'':'none');
+}
 
-  // KPIs مالية
-  const synOpex = D.syn.overhead;
+function setTxt(id,v){const e=document.getElementById(id); if(e)e.textContent=v;}
+function recalcFin(){
+  ensureFin();
+  const s=incomeStatement('s'), l=incomeStatement('l'), c=consolidated(), up=unrealizedProfit();
+  setTxt('upVal',fmt(up));
+  // KPIs
   document.getElementById('finKpis').innerHTML =
     kpiTile('إيراد الكيان الموحّد','بعد استبعاد البيني',`<span class="num">${fmt(c.revenue)}</span>`,null,'ر.س') +
     kpiTile('صافي ربح موحّد','بعد الزكاة',`<span class="num">${fmt(c.net)}</span>`,null,'ر.س') +
     kpiTile('مجمل الربح الموحّد',pct(c.gross/c.revenue*100)+' هامش',`<span class="num">${fmt(c.gross)}</span>`,null,'ر.س') +
     kpiTile('رأس المال العامل',`السيولة ${fmt1(c.ca/c.cl)}×`,`<span class="num">${fmt(c.ca-c.cl)}</span>`,'up','ر.س');
-
   // قائمة الدخل
-  document.getElementById('incomeTable').innerHTML = incomeTableHTML(s,l,c);
-  // الميزانية
-  document.getElementById('assetsTable').innerHTML = assetsTableHTML(c);
-  document.getElementById('liabTable').innerHTML = liabTableHTML(c);
+  setTxt('fc-revenue',fmt(s.revenue+l.revenue)); setTxt('fc-cogs',fmt(s.cogs+l.cogs)); setTxt('fc-finance',fmt(s.finance+l.finance));
+  setTxt('inc-elims','('+fmt(D.inter.sales)+')'); setTxt('inc-up',fmt(up));
+  setTxt('inc-elims-x','= تُطرح مبيعات سواج للأروش من الإيراد والتكلفة معًا');
+  setTxt('inc-up-x',`= ${fmt(D.inter.sales)} × ${fmt1(D.inter.margin)}% × ${fmt1(D.inter.invRetained)}%`);
+  setTxt('inc-g-s',fmt(s.gross)); setTxt('inc-g-l',fmt(l.gross)); setTxt('inc-g-c',fmt(c.gross));
+  setTxt('inc-o-s',fmt(s.opex)); setTxt('inc-o-l',fmt(l.opex)); setTxt('inc-o-c',fmt(c.opex));
+  setTxt('inc-e-s',fmt(s.ebit)); setTxt('inc-e-l',fmt(l.ebit)); setTxt('inc-e-c',fmt(c.ebit));
+  setTxt('inc-p-s',fmt(s.pbt)); setTxt('inc-p-l',fmt(l.pbt)); setTxt('inc-p-c',fmt(c.pbt));
+  setTxt('inc-z-s',fmt(s.zakat)); setTxt('inc-z-l',fmt(l.zakat)); setTxt('inc-z-c',fmt(c.zakat));
+  setTxt('inc-n-s',fmt(s.net)); setTxt('inc-n-l',fmt(l.net)); setTxt('inc-n-c',fmt(c.net));
+  // الميزانية: تحديث الموحّد لكل صف والمجاميع
+  ['ca','fa','cl','ncl','eq'].forEach(g=>{
+    let ts=0,tl=0;
+    D.fin[g].forEach((r,i)=>{ ts+=(+r.s||0); tl+=(+r.l||0); setTxt('fc-'+g+'-'+i,fmt((+r.s||0)+(+r.l||0))); });
+    setTxt('tot-'+g+'-s',fmt(ts)); setTxt('tot-'+g+'-l',fmt(tl)); setTxt('tot-'+g+'-c',fmt(ts+tl));
+  });
+  setTxt('el-recv','('+fmt(D.inter.balance)+')'); setTxt('el-inv','('+fmt(up)+')'); setTxt('el-pay','('+fmt(D.inter.balance)+')');
+  // إجماليات الأصول والخصوم بعد الاستبعاد
+  setTxt('assetsTable-gs',fmt(sumSide(D.fin.ca,'s')+sumSide(D.fin.fa,'s')));
+  setTxt('assetsTable-gl',fmt(sumSide(D.fin.ca,'l')+sumSide(D.fin.fa,'l')));
+  setTxt('assetsTable-gc',fmt(c.assets));
+  setTxt('liabTable-gs',fmt(sumSide(D.fin.cl,'s')+sumSide(D.fin.ncl,'s')+sumSide(D.fin.eq,'s')));
+  setTxt('liabTable-gl',fmt(sumSide(D.fin.cl,'l')+sumSide(D.fin.ncl,'l')+sumSide(D.fin.eq,'l')));
+  setTxt('liabTable-gc',fmt(c.liab+c.eq));
+  // كشف المصاريف
+  const totOpex=s.opex+l.opex, totRev=s.revenue+l.revenue;
+  D.fin.opex.forEach((r,i)=>{
+    const cons=(+r.s||0)+(+r.l||0);
+    const w= totOpex>0? cons/totOpex*100:0;
+    const rev= totRev>0? cons/totRev*100:0;
+    setTxt('ex-c-'+i,fmt(cons)); setTxt('ex-w-'+i,pct(w)); setTxt('ex-r-'+i,pct(rev));
+    const bar=document.getElementById('ex-bar-'+i); if(bar)bar.style.width=Math.min(100,w)+'%';
+  });
+  setTxt('ex-ts',fmt(s.opex)); setTxt('ex-tl',fmt(l.opex)); setTxt('ex-tc',fmt(totOpex));
+  setTxt('ex-tr', totRev>0? pct(totOpex/totRev*100):'0%');
   // المؤشرات
-  document.getElementById('ratioTable').innerHTML = ratioTableHTML(s,l,c);
-  // التآزر
-  document.getElementById('synOv').textContent=fmt(D.syn.overhead);
-  document.getElementById('synWc').textContent=fmt(D.syn.wcRelease);
-  document.getElementById('synRev').textContent=fmt(D.syn.revenueSyn);
-  document.getElementById('synTot').textContent=fmt(D.syn.overhead+D.syn.revenueSyn);
-  document.getElementById('synKpis').innerHTML =
+  const rt=document.getElementById('ratioTable'); if(rt) rt.innerHTML=ratioTableHTML(s,l,c);
+  // التآزر (قسم التكامل)
+  setTxt('synOv',fmt(D.syn.overhead)); setTxt('synWc',fmt(D.syn.wcRelease)); setTxt('synRev',fmt(D.syn.revenueSyn)); setTxt('synTot',fmt(D.syn.overhead+D.syn.revenueSyn));
+  const sk=document.getElementById('synKpis'); if(sk) sk.innerHTML=
     kpiTile('تآزر متكرر سنويًا','مصروفات + إيراد',`<span class="num">${fmt(D.syn.overhead+D.syn.revenueSyn)}</span>`,'up','ر.س') +
     kpiTile('نقد محرّر لمرة واحدة','رأس مال عامل',`<span class="num">${fmt(D.syn.wcRelease)}</span>`,'up','ر.س') +
-    kpiTile('ربح غير محقّق مُستبعَد','من المخزون',`<span class="num">${fmt(unrealizedProfit())}</span>`,null,'أثر IFRS');
-
-  if(document.getElementById('sec-financial').classList.contains('active')) renderFinCharts();
+    kpiTile('ربح غير محقّق مُستبعَد','من المخزون',`<span class="num">${fmt(up)}</span>`,null,'أثر IFRS');
+  if(document.getElementById('sec-financial') && document.getElementById('sec-financial').classList.contains('active')) renderFinCharts();
   renderDash();
-  saveDB();
 }
+function computeAll(){ ensureFin(); renderFinAll(); recalcFin(); saveDB(); }
 
-function row(label,a,b,c,opts={}){
-  const cls = opts.cls||'';
-  const elim = opts.elim?' elim':'';
-  return `<tr class="${cls}"><td>${label}</td><td class="n">${a==null?'':'<span class="num">'+fmt(a)+'</span>'}</td><td class="n">${b==null?'':'<span class="num">'+fmt(b)+'</span>'}</td><td class="n${elim}"><span class="num">${fmt(c)}</span></td></tr>`;
-}
-function incomeTableHTML(s,l,c){
-  return `<thead><tr><th>البند</th><th class="n">سواج</th><th class="n">الأروش</th><th class="n">الموحّد</th></tr></thead><tbody>
-    ${row('الإيرادات',s.revenue,l.revenue,c.revenue)}
-    ${row('(–) تكلفة المبيعات',s.cogs,l.cogs,c.cogs)}
-    <tr class="sub"><td>(–) استبعاد المبيعات البينية</td><td class="n"></td><td class="n"></td><td class="n elim"><span class="num">(${fmt(D.inter.sales)})</span></td></tr>
-    <tr class="sub"><td>(+) ربح غير محقّق في المخزون</td><td class="n"></td><td class="n"></td><td class="n elim"><span class="num">${fmt(unrealizedProfit())}</span></td></tr>
-    ${row('مجمل الربح',s.gross,l.gross,c.gross,{cls:'sub'})}
-    ${row('(–) المصروفات التشغيلية',s.opex,l.opex,c.opex)}
-    ${row('الربح التشغيلي',s.ebit,l.ebit,c.ebit,{cls:'sub'})}
-    ${row('(–) مصروفات تمويلية',s.finance,l.finance,c.finance)}
-    ${row('الربح قبل الزكاة',s.pbt,l.pbt,c.pbt)}
-    ${row('(–) الزكاة',s.zakat,l.zakat,c.zakat)}
-    ${row('صافي الربح',s.net,l.net,c.net,{cls:'total'})}
-  </tbody>`;
-}
-function assetsTableHTML(c){
-  const s=D.swaj,l=D.laroche;
-  let h=`<thead><tr><th>الأصول</th><th class="n">سواج</th><th class="n">الأروش</th><th class="n">الموحّد</th></tr></thead><tbody>`;
-  h+=`<tr class="sub"><td colspan="4">الأصول المتداولة</td></tr>`;
-  caRows.forEach(([k,lbl])=>{
-    let cons = s.ca[k]+l.ca[k];
-    if(k==='receivables') cons-=D.inter.balance;
-    if(k==='inventory') cons-=unrealizedProfit();
-    h+=row(lbl, s.ca[k], l.ca[k], cons, {elim:(k==='receivables'||k==='inventory')});
-  });
-  h+=row('مجموع المتداول', caTotal(s), caTotal(l), c.ca,{cls:'sub'});
-  h+=`<tr class="sub"><td colspan="4">الأصول الثابتة</td></tr>`;
-  faRows.forEach(([k,lbl])=> h+=row(lbl,s.fa[k],l.fa[k],s.fa[k]+l.fa[k]));
-  h+=row('مجموع الثابت', faTotal(s), faTotal(l), c.fa,{cls:'sub'});
-  h+=row('إجمالي الأصول', caTotal(s)+faTotal(s), caTotal(l)+faTotal(l), c.assets,{cls:'total'});
-  return h+'</tbody>';
-}
-function liabTableHTML(c){
-  const s=D.swaj,l=D.laroche;
-  let h=`<thead><tr><th>الخصوم وحقوق الملكية</th><th class="n">سواج</th><th class="n">الأروش</th><th class="n">الموحّد</th></tr></thead><tbody>`;
-  h+=`<tr class="sub"><td colspan="4">الخصوم المتداولة</td></tr>`;
-  clRows.forEach(([k,lbl])=>{
-    let cons=s.cl[k]+l.cl[k];
-    if(k==='payables') cons-=D.inter.balance;
-    h+=row(lbl,s.cl[k],l.cl[k],cons,{elim:(k==='payables')});
-  });
-  h+=row('مجموع المتداولة', clTotal(s), clTotal(l), c.cl,{cls:'sub'});
-  h+=`<tr class="sub"><td colspan="4">الخصوم غير المتداولة</td></tr>`;
-  nclRows.forEach(([k,lbl])=> h+=row(lbl,s.ncl[k],l.ncl[k],s.ncl[k]+l.ncl[k]));
-  h+=row('مجموع غير المتداولة', nclTotal(s), nclTotal(l), c.ncl,{cls:'sub'});
-  h+=`<tr class="sub"><td colspan="4">حقوق الملكية</td></tr>`;
-  eqRows.forEach(([k,lbl])=> h+=row(lbl,s.eq[k],l.eq[k],s.eq[k]+l.eq[k]));
-  h+=row('مجموع حقوق الملكية', eqTotal(s), eqTotal(l), c.eq,{cls:'sub'});
-  h+=row('إجمالي الخصوم وحقوق الملكية', clTotal(s)+nclTotal(s)+eqTotal(s), clTotal(l)+nclTotal(l)+eqTotal(l), c.liab+c.eq,{cls:'total'});
-  return h+'</tbody>';
-}
 function ratioTableHTML(s,l,c){
-  // قبل = مجموع منفصل (تقريبي بجمع الأصول/الخصوم دون استبعاد)
-  const sB={ca:caTotal(D.swaj)+caTotal(D.laroche), cl:clTotal(D.swaj)+clTotal(D.laroche),
-            inventory:D.swaj.ca.inventory+D.laroche.ca.inventory, assets:caTotal(D.swaj)+faTotal(D.swaj)+caTotal(D.laroche)+faTotal(D.laroche),
-            liab:clTotal(D.swaj)+nclTotal(D.swaj)+clTotal(D.laroche)+nclTotal(D.laroche), eq:eqTotal(D.swaj)+eqTotal(D.laroche)};
+  const f=D.fin;
+  const invBoth=tagSum(f.ca,'inv','s')+tagSum(f.ca,'inv','l');
+  const caBoth=sumSide(f.ca,'s')+sumSide(f.ca,'l');
+  const clBoth=sumSide(f.cl,'s')+sumSide(f.cl,'l');
+  const assetsBoth=caBoth+sumSide(f.fa,'s')+sumSide(f.fa,'l');
+  const liabBoth=clBoth+sumSide(f.ncl,'s')+sumSide(f.ncl,'l');
+  const eqBoth=sumSide(f.eq,'s')+sumSide(f.eq,'l');
+  const sB={ca:caBoth, cl:clBoth, inventory:invBoth, assets:assetsBoth, liab:liabBoth, eq:eqBoth};
   const isB={revenue:s.revenue+l.revenue, cogs:s.cogs+l.cogs, gross:s.gross+l.gross, net:s.net+l.net};
-  const before = ratios(null,isB,sB);
-  // بعد = الموحّد + أثر التآزر
-  const netAfter = c.net + D.syn.overhead*(1-D.zakatRate/100) + D.syn.revenueSyn*0.5;
-  const invAfter = c.inv;
-  const caAfter = c.ca - D.syn.wcRelease;
+  const before=ratios(null,isB,sB);
+  const netAfter=c.net + D.syn.overhead*(1-D.zakatRate/100) + D.syn.revenueSyn*0.5;
   const isA={revenue:c.revenue+D.syn.revenueSyn, cogs:c.cogs, gross:c.gross, net:netAfter};
-  const bsA={ca:caAfter, cl:c.cl, inventory:invAfter, assets:c.assets-D.syn.wcRelease, liab:c.liab, eq:c.eq+netAfter*0.3};
-  const after = ratios(null,isA,bsA);
+  const bsA={ca:c.ca-D.syn.wcRelease, cl:c.cl, inventory:c.inv, assets:c.assets-D.syn.wcRelease, liab:c.liab, eq:c.eq+netAfter*0.3};
+  const after=ratios(null,isA,bsA);
   const r=(lbl,b,a,better,unit='')=>{
     const up = better==='up'? a>=b : a<=b;
-    return `<tr><td>${lbl}</td><td class="n"><span class="num">${unit==='x'?fmt1(b)+'×':unit==='%'?pct(b):fmt(b)}</span></td>
-      <td class="n"><span class="num">${unit==='x'?fmt1(a)+'×':unit==='%'?pct(a):fmt(a)}</span></td>
+    const F=v=>unit==='x'?fmt1(v)+'×':unit==='%'?pct(v):fmt(v);
+    return `<tr><td>${lbl}</td><td class="n"><span class="num">${F(b)}</span></td><td class="n"><span class="num">${F(a)}</span></td>
       <td><span class="pill ${up?'pos':'neg'}">${up?'▲ تحسّن':'▼ تراجع'}</span></td></tr>`;
   };
   return `<thead><tr><th>المؤشر</th><th class="n">قبل الدمج</th><th class="n">بعد الدمج</th><th>الأثر</th></tr></thead><tbody>
@@ -1253,7 +1366,7 @@ Chart.defaults.font.family="'IBM Plex Sans Arabic',sans-serif";
 Chart.defaults.color='#5B6472';
 
 function renderFinCharts(){
-  const s=incomeStatement(D.swaj), l=incomeStatement(D.laroche), c=consolidated();
+  const s=incomeStatement('s'), l=incomeStatement('l'), c=consolidated();
   mkChart('chFin','bar',{
     labels:['الإيرادات','مجمل الربح','الربح التشغيلي','صافي الربح'],
     datasets:[
@@ -1264,9 +1377,21 @@ function renderFinCharts(){
   },{plugins:{legend:{position:'bottom'}},scales:{y:{ticks:{callback:v=>(v/1e6)+'م'}}}});
 
   mkChart('chAssets','doughnut',{
-    labels:['نقد','ذمم مدينة','مخزون','مدفوع مقدمًا/أخرى','أصول ثابتة'],
-    datasets:[{data:[c.cash,c.recv,c.inv,c.ca-c.cash-c.recv-c.inv,c.fa],
-      backgroundColor:[PAL.ink,PAL.brass,PAL.brassSoft,PAL.muted,PAL.pos],borderWidth:2,borderColor:'#fff'}]
+    labels:['ذمم مدينة (موحّد)','مخزون (موحّد)','أصول متداولة أخرى','أصول ثابتة'],
+    datasets:[{data:[Math.max(0,c.recv),Math.max(0,c.inv),Math.max(0,c.other),Math.max(0,c.fa)],
+      backgroundColor:[PAL.brass,PAL.brassSoft,PAL.muted,PAL.pos],borderWidth:2,borderColor:'#fff'}]
+  },{plugins:{legend:{position:'right'}},cutout:'58%'});
+
+  const exLabels=D.fin.opex.map(x=>x.n), exData=D.fin.opex.map(x=>(+x.s||0)+(+x.l||0));
+  mkChart('chExp','doughnut',{
+    labels:exLabels,
+    datasets:[{data:exData,backgroundColor:[PAL.ink,PAL.brass,PAL.brassSoft,PAL.pos,PAL.muted,'#7B8AA6','#D8B26B','#9C6B4A'],borderWidth:2,borderColor:'#fff'}]
+  },{plugins:{legend:{position:'right'}},cutout:'55%'});
+
+  mkChart('chStruct','doughnut',{
+    labels:['حقوق الملكية','خصوم متداولة','خصوم غير متداولة'],
+    datasets:[{data:[Math.max(0,c.eq),Math.max(0,c.cl),Math.max(0,c.ncl)],
+      backgroundColor:[PAL.pos,PAL.brass,PAL.ink],borderWidth:2,borderColor:'#fff'}]
   },{plugins:{legend:{position:'right'}},cutout:'58%'});
 }
 function renderMarketChart(){
@@ -1366,84 +1491,53 @@ function importData(e){
 
 /* ---------- استيراد من Excel عبر قالب ثابت ---------- */
 // مصدر واحد للحقول: [الرمز, البند, القسم]
-const FIELDS=[
-  ['revenue','الإيرادات','قائمة الدخل'],
-  ['cogs','تكلفة المبيعات','قائمة الدخل'],
-  ['op.salaries','رواتب وأجور','المصروفات التشغيلية'],
-  ['op.rent','إيجارات','المصروفات التشغيلية'],
-  ['op.marketing','تسويق ودعاية','المصروفات التشغيلية'],
-  ['op.admin','مصروفات إدارية وعمومية','المصروفات التشغيلية'],
-  ['op.depreciation','إهلاك واستهلاك','المصروفات التشغيلية'],
-  ['op.other','مصروفات تشغيلية أخرى','المصروفات التشغيلية'],
-  ['finance','مصروفات تمويلية','قائمة الدخل'],
-  ['ca.cash','النقد وما في حكمه','الأصول المتداولة'],
-  ['ca.receivables','ذمم مدينة (عملاء)','الأصول المتداولة'],
-  ['ca.inventory','المخزون','الأصول المتداولة'],
-  ['ca.prepaid','مصروفات مدفوعة مقدمًا','الأصول المتداولة'],
-  ['ca.other','أصول متداولة أخرى','الأصول المتداولة'],
-  ['fa.property','عقارات وممتلكات','الأصول الثابتة'],
-  ['fa.fixtures','أثاث وتجهيزات وديكورات','الأصول الثابتة'],
-  ['fa.vehicles','سيارات ومعدات','الأصول الثابتة'],
-  ['fa.intangibles','أصول غير ملموسة (شهرة/برمجيات)','الأصول الثابتة'],
-  ['fa.other','أصول ثابتة أخرى','الأصول الثابتة'],
-  ['cl.payables','ذمم دائنة (موردون)','الخصوم المتداولة'],
-  ['cl.stloans','قروض قصيرة الأجل','الخصوم المتداولة'],
-  ['cl.accruals','مصروفات مستحقة','الخصوم المتداولة'],
-  ['cl.zakat','مخصص الزكاة','الخصوم المتداولة'],
-  ['cl.other','خصوم متداولة أخرى','الخصوم المتداولة'],
-  ['ncl.ltloans','قروض طويلة الأجل','الخصوم غير المتداولة'],
-  ['ncl.eosb','مكافأة نهاية الخدمة','الخصوم غير المتداولة'],
-  ['eq.capital','رأس المال','حقوق الملكية'],
-  ['eq.reserves','الاحتياطيات','حقوق الملكية'],
-  ['eq.retained','الأرباح المبقاة','حقوق الملكية'],
-];
-const INTER_FIELDS=[
-  ['inter.sales','مبيعات سواج البينية للأروش (ر.س)'],
-  ['inter.margin','هامش سواج على المبيعات البينية (%)'],
-  ['inter.invRetained','نسبة البضاعة البينية في مخزون الأروش آخر المدة (%)'],
-  ['inter.balance','الرصيد البيني — ذمم سواج على الأروش (ر.س)'],
-];
 function num(v){ if(v==null)return 0; const x=parseFloat((''+v).replace(/[^\d.\-]/g,'')); return isFinite(x)?x:0; }
-
+const GROUP_LABELS={revenue:'قائمة الدخل',cogs:'قائمة الدخل',finance:'قائمة الدخل',opex:'المصروفات التشغيلية',ca:'الأصول المتداولة',fa:'الأصول الثابتة',cl:'الخصوم المتداولة',ncl:'الخصوم غير المتداولة',eq:'حقوق الملكية'};
+function guessTag(group,name){
+  name=name||'';
+  if(group==='ca'){ if(name.indexOf('مخزون')>=0)return 'inv'; if(name.indexOf('مدين')>=0)return 'recv'; }
+  if(group==='cl'){ if(name.indexOf('دائن')>=0)return 'pay'; }
+  return '';
+}
 function downloadTemplate(){
-  const rows=[['الرمز (لا تعدّله)','البند','القسم','سواج','الأروش']];
-  FIELDS.forEach(([c,l,s])=> rows.push([c,l,s,'','']));
+  ensureFin();
+  const rows=[['المجموعة (لا تعدّله)','البند','سواج','الأروش','وسم']];
+  [['revenue','الإيرادات'],['cogs','تكلفة المبيعات'],['finance','مصروفات تمويلية']].forEach(([g,lbl])=>{
+    rows.push([g,lbl,D.fin[g].s,D.fin[g].l,'']);
+  });
+  ['opex','ca','fa','cl','ncl','eq'].forEach(g=>{
+    D.fin[g].forEach(r=> rows.push([g,r.n,r.s,r.l,r.tag||'']));
+  });
   rows.push([]);
-  rows.push(['الرمز (لا تعدّله)','المعاملات البينية','','القيمة','']);
-  INTER_FIELDS.forEach(([c,l])=> rows.push([c,l,'','','']));
+  [['sales','مبيعات سواج البينية للأروش (ر.س)'],['margin','هامش سواج على المبيعات البينية (%)'],['invRetained','نسبة البضاعة البينية في مخزون الأروش (%)'],['balance','الرصيد البيني — ذمم سواج على الأروش (ر.س)']].forEach(([k,lbl])=>{
+    rows.push(['inter',lbl,D.inter[k],'',k]);
+  });
   const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:18},{wch:38},{wch:22},{wch:16},{wch:16}];
-  if(!ws['!props'])ws['!props']={};
-  const wb=XLSX.utils.book_new();
-  wb.Workbook={Views:[{RTL:true}]};
+  ws['!cols']=[{wch:20},{wch:40},{wch:16},{wch:16},{wch:12}];
+  const wb=XLSX.utils.book_new(); wb.Workbook={Views:[{RTL:true}]};
   XLSX.utils.book_append_sheet(wb,ws,'بيانات الشركتين');
   XLSX.writeFile(wb,'قالب_بيانات_سواج_الأروش.xlsx');
 }
-
 function importExcel(e){
   const f=e.target.files[0]; if(!f)return;
   const rd=new FileReader();
   rd.onload=()=>{
     try{
+      ensureFin();
       const wb=XLSX.read(rd.result,{type:'array'});
       const ws=wb.Sheets[wb.SheetNames[0]];
       const rows=XLSX.utils.sheet_to_json(ws,{header:1});
+      const acc={opex:[],ca:[],fa:[],cl:[],ncl:[],eq:[]};
+      const seen={};
       let n=0;
       rows.forEach(r=>{
-        const code=(r[0]==null?'':''+r[0]).trim();
-        if(!code || code.indexOf('الرمز')===0) return;
-        if(code.indexOf('inter.')===0){
-          const k=code.split('.')[1];
-          if(k in D.inter){ D.inter[k]=num(r[3]); n++; }
-          return;
-        }
-        const vS=num(r[3]), vL=num(r[4]);
-        if(['revenue','cogs','finance'].indexOf(code)>=0){ D.swaj[code]=vS; D.laroche[code]=vL; n++; return; }
-        const p=code.split('.');
-        if(p.length===2 && D.swaj[p[0]] && (p[1] in D.swaj[p[0]])){
-          D.swaj[p[0]][p[1]]=vS; D.laroche[p[0]][p[1]]=vL; n++;
-        }
+        const g=(r[0]==null?'':''+r[0]).trim();
+        if(!g || g.indexOf('المجموعة')===0) return;
+        if(g==='inter'){ const k=(''+(r[4]||'')).trim(); if(k && (k in D.inter)){ D.inter[k]=num(r[2]); n++; } return; }
+        if(['revenue','cogs','finance'].indexOf(g)>=0){ D.fin[g].s=num(r[2]); D.fin[g].l=num(r[3]); n++; return; }
+        if(acc[g]){ acc[g].push({n:(''+(r[1]||'بند')).trim(), s:num(r[2]), l:num(r[3]), tag:(''+(r[4]||'')).trim()||guessTag(g,''+(r[1]||''))}); seen[g]=true; n++; }
       });
+      ['opex','ca','fa','cl','ncl','eq'].forEach(g=>{ if(seen[g]) D.fin[g]=acc[g]; });
       saveDB();
       if(session) runApp();
       alert('تم استيراد '+n+' بندًا من ملف Excel بنجاح');
@@ -1486,7 +1580,7 @@ function normalizeUsers(){
     SECTIONS.forEach(([k])=>{ if(!x.acc[k]) x.acc[k]='none'; });
   });
 }
-const SKEY='mergerDB_v3';
+const SKEY='mergerDB_v4';
 let session=null;
 
 function saveDB(){
@@ -1521,6 +1615,7 @@ function logout(){
 }
 
 function runApp(){
+  ensureFin();
   ensureCards();
   ensureExtras();
   buildTabs();
@@ -1556,6 +1651,7 @@ function applyPermissions(){
   // المدخلات المالية
   const finOK=canEditSec('financial');
   document.querySelectorAll('.fin-in').forEach(i=> i.disabled=!finOK);
+  applyFinPerms();
   // حقول التحليل لكل قسم
   document.querySelectorAll('.secnote').forEach(t=> t.disabled=!canEditSec(t.id.replace('note-','')));
   // بطاقات القياس والمحرّرات التفاعلية
@@ -1635,28 +1731,26 @@ function delUser(i){
 /* ============================================================
    التشغيل والتهيئة
    ============================================================ */
-function refreshLoginHint(){
-  const def=(D.users||[]).find(x=>x.u==='admin'&&x.p==='admin123');
-  const el=document.getElementById('loginHint'); if(!el) return;
-  el.innerHTML = def
-    ? 'الدخول الأول — المستخدم: <b>admin</b> · كلمة المرور: <b>admin123</b><br>أنشئ مستخدمين جددًا من «المستخدمون» بعد الدخول'
-    : 'أدخل بيانات الحساب الذي أنشأه مدير النظام';
-}
-
+/* ============================================================
+   التشغيل والتهيئة (مع المزامنة السحابية)
+   ============================================================ */
+loadDB();        // كاش محلي فوري
+cloudInit();
 // إخفاء التطبيق حتى تسجيل الدخول
 ['.topbar','.tabs','#main'].forEach(s=>{const el=document.querySelector(s); if(el)el.style.display='none';});
-
-loadDB();        // كاش محلي فوري (يعمل حتى بدون إنترنت)
-cloudInit();
-
 (async function boot(){
   setCloudStatus(cloudReady ? 'saving' : 'off');
-  const got = await cloudLoad();          // اجلب أحدث نسخة مشتركة من السحابة
+  const got = await cloudLoad();        // أحدث نسخة مشتركة من السحابة
+  ensureFin();
   seedAdmin();
   normalizeUsers();
-  if(!got){ saveDB(); }                   // أول تشغيل: أنشئ الصف السحابي + الكاش
+  if(!got){ saveDB(); }                 // أول تشغيل: أنشئ الصف السحابي + الكاش
   else { try{localStorage.setItem(SKEY,JSON.stringify(D));}catch(e){} }
-  refreshLoginHint();
+  // تلميح بيانات الدخول الافتراضية
+  const def=(D.users||[]).find(x=>x.u==='admin'&&x.p==='admin123');
+  document.getElementById('loginHint').innerHTML = def
+    ? 'الدخول الأول — المستخدم: <b>admin</b> · كلمة المرور: <b>admin123</b><br>أنشئ مستخدمين جددًا من «المستخدمون» بعد الدخول'
+    : 'أدخل بيانات الحساب الذي أنشأه مدير النظام';
   setCloudStatus(cloudReady ? 'ok' : 'off');
 })();
 </script>
