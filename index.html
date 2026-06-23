@@ -530,6 +530,7 @@ function switchTab(id){
   if(id==='financial') renderFinCharts();
   if(id==='dashboard') renderDash();
   if(id==='market') renderMarketChart();
+  if(id==='integration'){ renderSynCharts(); renderScenario(); }
 }
 
 /* ============================================================
@@ -593,6 +594,8 @@ function secFinancial(){
     </div>
 
     <div class="grid g4" id="finKpis"></div>
+
+    <div id="balCheck"></div>
 
     <div class="card">
       <div class="card-title"><span class="dot"></span>المعاملات البينية — مدخلات الاستبعاد (IFRS)</div>
@@ -838,6 +841,20 @@ function secIntegration(){
           <tr><td>تآزر إيرادي</td><td>قناة رقمية + مبيعات متقاطعة + عقود مؤسسات</td><td class="n" id="synRev">—</td></tr>
           <tr class="total"><td>إجمالي التآزر التشغيلي السنوي المتكرر</td><td></td><td class="n" id="synTot">—</td></tr>
         </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>مدرّج التآزر (Waterfall) — من الربح الحالي إلى الربح بعد التآزر</div>
+      <div class="chart-box"><canvas id="chWaterfall"></canvas></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>تحليل السيناريوهات — حساسية نسبة تحقّق التآزر</div>
+      <p class="card-sub">يُعرض صافي الربح الموحّد المتوقّع والتآزر السنوي المتكرر تحت ثلاثة احتمالات لتحقّق التآزر، مع فترة الاسترداد التقريبية لرأس المال العامل المُحرَّر.</p>
+      <table id="scenarioTbl">
+        <thead><tr><th>السيناريو</th><th>نسبة التحقّق</th><th>تآزر سنوي متكرر (ر.س)</th><th>صافي ربح موحّد + تآزر (ر.س)</th><th>فترة استرداد تقريبية</th></tr></thead>
+        <tbody></tbody>
       </table>
     </div>
 
@@ -1321,6 +1338,9 @@ function recalcFin(){
     kpiTile('نقد محرّر لمرة واحدة','رأس مال عامل',`<span class="num">${fmt(D.syn.wcRelease)}</span>`,'up','ر.س') +
     kpiTile('ربح غير محقّق مُستبعَد','من المخزون',`<span class="num">${fmt(up)}</span>`,null,'أثر IFRS');
   if(document.getElementById('sec-financial') && document.getElementById('sec-financial').classList.contains('active')) renderFinCharts();
+  renderBalCheck(c);
+  renderScenario();
+  if(document.getElementById('sec-integration') && document.getElementById('sec-integration').classList.contains('active')) renderSynCharts();
   renderDash();
 }
 function computeAll(){ ensureFin(); renderFinAll(); recalcFin(); saveDB(); }
@@ -1409,6 +1429,70 @@ function mkChart(id,type,data,opts){
   charts[id]=new Chart(el,{type,data,options:Object.assign({responsive:true,maintainAspectRatio:false},opts)});
 }
 
+/* ---------- (1) فحص توازن الميزانية ---------- */
+function renderBalCheck(c){
+  const el=document.getElementById('balCheck'); if(!el) return;
+  const assets=c.assets, liabEq=c.liab+c.eq, diff=assets-liabEq;
+  const tol=Math.max(1, Math.abs(assets)*0.005); // سماحية 0.5%
+  if(Math.abs(diff)<=tol){
+    el.innerHTML=`<div style="background:#EAF5EF;border-inline-start:4px solid ${PAL.pos};padding:11px 16px;border-radius:0 10px 10px 0;font-size:13.5px;margin-bottom:14px">
+      ✓ <b>الميزانية متوازنة:</b> إجمالي الأصول الموحّد <b class="num">${fmt(assets)}</b> ر.س = إجمالي الخصوم وحقوق الملكية <b class="num">${fmt(liabEq)}</b> ر.س.</div>`;
+  }else{
+    el.innerHTML=`<div style="background:#FBECEC;border-inline-start:4px solid #B23A48;padding:11px 16px;border-radius:0 10px 10px 0;font-size:13.5px;margin-bottom:14px">
+      ⚠ <b>الميزانية غير متوازنة بفارق <span class="num">${fmt(diff)}</span> ر.س.</b> الأصول <b class="num">${fmt(assets)}</b> مقابل الخصوم وحقوق الملكية <b class="num">${fmt(liabEq)}</b>.
+      راجِع رأس المال أو الأرباح المبقاة أو بنود الأصول لضبط التوازن.</div>`;
+  }
+}
+
+/* ---------- (2) مدرّج التآزر Waterfall ---------- */
+function renderSynCharts(){
+  const c=consolidated();
+  const base=c.net;
+  const ov=D.syn.overhead*(1-D.zakatRate/100);   // وفر مصروفات بعد الزكاة
+  const rev=D.syn.revenueSyn*(1-D.zakatRate/100); // تآزر إيرادي بعد الزكاة
+  const finalV=base+ov+rev;
+  // قيم القاعدة الشفافة لكل عمود لإظهار شكل المدرّج
+  const steps=[
+    {lbl:'صافي الربح الحالي', base:0,        val:base,   col:PAL.ink},
+    {lbl:'+ وفر مصروفات',     base:base,      val:ov,     col:PAL.brass},
+    {lbl:'+ تآزر إيرادي',     base:base+ov,   val:rev,    col:PAL.brassSoft},
+    {lbl:'الربح بعد التآزر',  base:0,         val:finalV, col:PAL.pos},
+  ];
+  mkChart('chWaterfall','bar',{
+    labels:steps.map(s=>s.lbl),
+    datasets:[
+      {label:'',data:steps.map(s=>s.base),backgroundColor:'rgba(0,0,0,0)',stack:'w'},
+      {label:'القيمة',data:steps.map(s=>s.val),backgroundColor:steps.map(s=>s.col),stack:'w',borderRadius:4}
+    ]
+  },{plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.datasetIndex===1?fmt(ctx.raw)+' ر.س':''}}},
+     scales:{y:{ticks:{callback:v=>(v/1e6)+'م'}}}});
+}
+
+/* ---------- (3) تحليل السيناريوهات ---------- */
+function renderScenario(){
+  const tb=document.querySelector('#scenarioTbl tbody'); if(!tb) return;
+  const c=consolidated();
+  const zk=1-D.zakatRate/100;
+  const wc=D.syn.wcRelease;
+  const rows=[
+    ['متحفّظ',  0.50,'#B23A48'],
+    ['أساسي',   1.00,PAL.brass],
+    ['متفائل',  1.25,PAL.pos],
+  ];
+  tb.innerHTML=rows.map(([name,k,col])=>{
+    const syn=(D.syn.overhead+D.syn.revenueSyn)*k;
+    const net=c.net + (D.syn.overhead*k*zk) + (D.syn.revenueSyn*k*zk);
+    const payback= syn>0 ? (wc/syn) : 0;
+    const pb = syn>0 ? (payback<1? (Math.round(payback*12))+' شهر' : fmt1(payback)+' سنة') : '—';
+    return `<tr><td><span class="pill" style="background:${col}1a;color:${col};font-weight:700">${name}</span></td>
+      <td class="num">${(k*100).toFixed(0)}%</td>
+      <td class="n num">${fmt(syn)}</td>
+      <td class="n num">${fmt(net)}</td>
+      <td>${pb}</td></tr>`;
+  }).join('');
+}
+
+
 /* ---------- لوحة القرار ---------- */
 function weightedScore(){
   let t=0,w=0;
@@ -1446,9 +1530,21 @@ function renderDash(){
 
   // الملخص التنفيذي
   const r = ratios(null,{revenue:c.revenue,cogs:c.cogs,gross:c.gross,net:c.net},{ca:c.ca,fa:c.fa,assets:c.assets,cl:c.cl,liab:c.liab,eq:c.eq,inventory:c.inv});
+  // أعلام المخاطر المحسوبة آليًا
+  const flags=[];
+  if(c.net<0) flags.push('صافي الربح الموحّد سالب — يلزم مراجعة هيكل التكلفة قبل الدمج.');
+  if(isFinite(r.cr) && r.cr<1) flags.push(`نسبة السيولة الحالية ${fmt1(r.cr)}× دون 1 — احتمال ضغط على رأس المال العامل.`);
+  if(isFinite(r.de) && r.de>2) flags.push(`نسبة الدين إلى حقوق الملكية ${fmt1(r.de)}× مرتفعة — مخاطرة مالية تحتاج معالجة.`);
+  if(isFinite(r.nm) && r.nm<3 && c.net>=0) flags.push(`هامش صافي الربح ${pct(r.nm)} منخفض — حساسية عالية للتقلبات.`);
+  const balDiff=c.assets-(c.liab+c.eq);
+  if(Math.abs(balDiff)>Math.max(1,Math.abs(c.assets)*0.005)) flags.push(`الميزانية غير متوازنة بفارق ${fmt(balDiff)} ر.س — راجِع بيانات الأصول/حقوق الملكية.`);
+  const riskBlock = flags.length
+    ? `<p style="background:#FBECEC;border-inline-start:3px solid #B23A48;padding:11px 16px;border-radius:0 10px 10px 0"><b>تنبيهات تلقائية (${flags.length}):</b><br>• ${flags.join('<br>• ')}</p>`
+    : `<p style="background:#EAF5EF;border-inline-start:3px solid ${PAL.pos};padding:11px 16px;border-radius:0 10px 10px 0">✓ لا توجد أعلام مالية حرجة: السيولة والرافعة وهامش الربح ضمن النطاقات المقبولة، والميزانية متوازنة.</p>`;
   document.getElementById('execSummary').innerHTML = `
     <p>يُنتِج دمج <b>سواج التجارية</b> و<b>الأروش التجارية</b> كيانًا بإيراد موحّد قدره <b class="num">${fmt(c.revenue)}</b> ر.س وصافي ربح <b class="num">${fmt(c.net)}</b> ر.س بعد استبعاد المبيعات البينية البالغة <b class="num">${fmt(D.inter.sales)}</b> ر.س والربح غير المحقّق في المخزون البالغ <b class="num">${fmt(unrealizedProfit())}</b> ر.س وفق معايير IFRS.</p>
     <p>يحقّق الدمج تآزرًا سنويًا متكرّرًا يقارب <b class="num">${fmt(D.syn.overhead+D.syn.revenueSyn)}</b> ر.س ويحرّر نحو <b class="num">${fmt(D.syn.wcRelease)}</b> ر.س من رأس المال العامل عبر توحيد سلسلة الإمداد وتسريع دوران المخزون. هامش مجمل الربح الموحّد ${pct(r.gm)} ونسبة السيولة ${fmt1(r.cr)}×.</p>
+    ${riskBlock}
     <p style="background:#FBF8F0;border-inline-start:3px solid ${v.c};padding:12px 16px;border-radius:0 10px 10px 0"><b>التوصية النهائية:</b> بدرجة قرار موزونة <b class="num">${score.toFixed(0)}/100</b> — <b style="color:${v.c}">${v.t}</b>. أبرز شروط النجاح: إنجاز توحيد الأنظمة (ERP)، تسوية الأرصدة البينية بتدقيق مستقل قبل الإغلاق، وتنفيذ خطة الأيام المئة مع مساءلة شهرية عن تحقّق التآزر.</p>
     <div id="notesOut"></div>`;
   const n=document.getElementById('mgmtNotes');
