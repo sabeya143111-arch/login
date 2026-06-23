@@ -9,7 +9,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root{
   --ink:#14213D;
@@ -379,24 +378,17 @@ const D = {
 };
 
 /* ============================================================
-   ☁️ قاعدة البيانات السحابية المجانية (Supabase)
-   عدّل القيمتين التاليتين فقط ببيانات مشروعك ثم احفظ الملف.
-   احصل عليهما من: Supabase → Project Settings → API
+   ☁️ قاعدة البيانات (Google Sheet + Apps Script)
+   ضع رابط تطبيق الويب (Web App) فقط ثم احفظ الملف.
+   احصل عليه من: Apps Script → Deploy → New deployment → Web app → /exec
    ============================================================ */
-const SUPABASE_URL = 'https://gspfxdsuamqlynshgjii.supabase.co';            // ←①  Project URL
-const SUPABASE_KEY = 'sb_publishable_DRUKXKJGZHskOqKP-OXvwQ_BlTLTTmm';      // ←②  publishable (anon) key
-const CLOUD_TABLE  = 'merger_study';   // اسم الجدول (لا تغيّره إلا إذا غيّرت SQL)
+const GAS_URL = 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE/exec';  // ←①  رابط /exec
 const CLOUD_ROW_ID = 'main';           // صف واحد يحوي كامل الدراسة لكل المستخدمين
 
-let sb = null, cloudReady = false, _cloudTimer = null;
+let cloudReady = false, _cloudTimer = null;
 
 function cloudInit(){
-  try{
-    if(window.supabase && SUPABASE_URL.indexOf('YOUR-') < 0){
-      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      cloudReady = true;
-    }
-  }catch(e){ cloudReady = false; }
+  cloudReady = /script\.google\.com\/macros\/s\//.test(GAS_URL);
 }
 
 function setCloudStatus(state){
@@ -417,10 +409,9 @@ function setCloudStatus(state){
 async function cloudLoad(){
   if(!cloudReady) return false;
   try{
-    const { data, error } = await sb
-      .from(CLOUD_TABLE).select('data').eq('id', CLOUD_ROW_ID).maybeSingle();
-    if(error) throw error;
-    if(data && data.data){ Object.assign(D, data.data); return true; }
+    const res = await fetch(GAS_URL + '?id=' + encodeURIComponent(CLOUD_ROW_ID) + '&t=' + Date.now());
+    const j = await res.json();
+    if(j && j.ok && j.data){ Object.assign(D, j.data); return true; }
     return false;                 // لا يوجد صف بعد (أول تشغيل)
   }catch(e){ console.warn('cloudLoad', e); setCloudStatus('error'); return false; }
 }
@@ -429,14 +420,18 @@ async function cloudSave(){
   if(!cloudReady) return;
   try{
     setCloudStatus('saving');
-    const { error } = await sb.from(CLOUD_TABLE)
-      .upsert({ id: CLOUD_ROW_ID, data: D, updated_at: new Date().toISOString() });
-    setCloudStatus(error ? 'error' : 'ok');
+    const res = await fetch(GAS_URL, {
+      method:'POST',
+      headers:{ 'Content-Type':'text/plain;charset=utf-8' },   // يتفادى preflight CORS
+      body: JSON.stringify({ id: CLOUD_ROW_ID, data: D })
+    });
+    const j = await res.json();
+    setCloudStatus(j && j.ok ? 'ok' : 'error');
   }catch(e){ console.warn('cloudSave', e); setCloudStatus('error'); }
 }
 
 async function manualSync(){
-  if(!cloudReady){ alert('السحابة غير مهيّأة — عدّل SUPABASE_URL و SUPABASE_KEY في أعلى السكربت.'); return; }
+  if(!cloudReady){ alert('السحابة غير مهيّأة — ضع رابط تطبيق الويب (GAS_URL) في أعلى السكربت.'); return; }
   setCloudStatus('saving');
   const ok = await cloudLoad();
   if(ok){
